@@ -47,6 +47,8 @@ Demo mode needs neither a paid AI request nor a funded wallet. To verify a signa
 
 **BENIGN** closes a review; it does not independently issue a grant. **CUSTOMER_VERIFIED** is the explicit identity recovery action. Customer access tokens stay in browser memory and disappear on refresh or wallet change. Cases remain in SQLite; start a new access request after reloading the customer page. Admin demo reset clears cases, attempts, reviews, incidents, nonces, and rate-limit state. It does not undo blockchain transactions. Keep demo and live databases separate.
 
+**Risk policy (spec §7):** the fused score is computed on exact decimals and x.5 rounds up into the stricter band. Uncertain Gemini output (high-severity label below 0.70 confidence, or an explicit review request) routes to REVIEW, but never lowers a RESTRICT that anomaly, rules and threat memory reach on their own. A RESTRICT stays in force for `restrict_ttl_minutes` even if the wallet's next request scores lower; analyst resolution or expiry lifts it. Thresholds, the TTL (1-1440 minutes) and `low_confidence_high_severity_action` (must be REVIEW) are validated at startup. Regression tests: `backend/tests/test_section7_policy.py`.
+
 ## Architecture and scope
 
 | Stage | Implementation |

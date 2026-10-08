@@ -4,6 +4,7 @@ import logging
 import math
 import os
 from typing import Optional
+import httpx
 from google import genai
 from google.genai import types
 from app.ai.schemas import GeminiTriage, provider_schema
@@ -103,6 +104,8 @@ class GeminiTriageClient:
             return triage
         except TimeoutError:
             raise
+        except httpx.TimeoutException as exc:
+            raise TimeoutError("Gemini provider timed out") from exc
         except Exception as exc:
 
             code = getattr(exc, "code", None)
