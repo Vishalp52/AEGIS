@@ -23,3 +23,7 @@ The backend tests include durable case/review reload, token exclusion from snaps
 ## Aegis rename verification
 
 On October 13, 2026, the Aegis rename passed all 228 backend tests, 12 contract tests, frontend lint and production build. The API proxy now uses /api/aegis; configuration uses AEGIS_ADMIN_KEY, AEGIS_EMPLOYEE_KEYS, AEGIS_REGISTRY_ADDRESS and AEGIS_API_URL. The existing GitHub repository URL is retained until the remote repository is renamed.
+
+## Wallet and API fixes on October 13
+
+231 backend tests and 11 frontend tests passed, with frontend lint/build and browser signed-wallet recovery and stale-response checks. Live Gemini model discovery returned HTTP 200 with the replacement credential, but generation returned provider HTTP 503. See docs/API_WALLET_CHECK.md; live generation is not claimed as passed.

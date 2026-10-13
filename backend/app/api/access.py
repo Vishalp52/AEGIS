@@ -99,6 +99,8 @@ def customer_status(request_id: str):
 @router.get("/access/{request_id}/challenge", dependencies=[rate_limit("nonce")])
 def get_challenge(request_id: str):
     case = _get_case(request_id)
+    if case.get("revoked") or time.time() >= case["expires_at_ts"]:
+        raise HTTPException(409, "this challenge is expired or revoked; request access again")
     if case["decision"] != "CHALLENGE" or case.get("resolved"):
         raise HTTPException(409, "this request does not require a wallet challenge")
     nonce, message, exp = nonces.issue(case["wallet"], f"step-up verification for {request_id}")
@@ -108,22 +110,25 @@ def get_challenge(request_id: str):
 @router.post("/access/{request_id}/verify", response_model=VerifyResponse, dependencies=[rate_limit("verify")])
 def verify_challenge(request_id: str, body: VerifyRequest, request: Request):
     """Step-up verification: the wallet signs a one-time, expiring challenge."""
-    case = _get_case(request_id)
-    if case["decision"] != "CHALLENGE" or case.get("resolved"):
-        raise HTTPException(409, "only open CHALLENGE decisions can be resolved by wallet signature")
-    rate_limit_wallet("verify", case["wallet"])
-    msg = nonces.consume(body.nonce, case["wallet"], f"step-up verification for {request_id}")
-    if not msg:
-        raise _auth_failed(request, case["wallet"], case["resource_id"], "invalid/expired/reused challenge")
-    if recover_signer(msg, body.signature) != case["wallet"]:
-        raise _auth_failed(request, case["wallet"], case["resource_id"], "signer mismatch")
-    now = time.time()
-    case.update(resolved=True, status="RESOLVED", wallet_verified=True, expires_at_ts=max(case["expires_at_ts"], now + 600))
-    h = db_audit(case["wallet"], "CHALLENGE_VERIFIED", request_id, {"at": int(now)})
-    case["audit"].append({"actor": case["wallet"], "event": "CHALLENGE_VERIFIED", "at": _iso(now), "payload_hash": h})
-    token = issue_access_token(request_id, case["wallet"], case["resource_id"], case["expires_at_ts"])
-    persist_cases()
-    return {**customer_payload(request_id, "RESOLVED"), "access_token": token}
+    with store.lock:
+        case = _get_case(request_id)
+        if case.get("revoked") or time.time() >= case["expires_at_ts"]:
+            raise HTTPException(409, "this challenge is expired or revoked; request access again")
+        if case["decision"] != "CHALLENGE" or case.get("resolved"):
+            raise HTTPException(409, "only open CHALLENGE decisions can be resolved by wallet signature")
+        rate_limit_wallet("verify", case["wallet"])
+        msg = nonces.consume(body.nonce, case["wallet"], f"step-up verification for {request_id}")
+        if not msg:
+            raise _auth_failed(request, case["wallet"], case["resource_id"], "invalid/expired/reused challenge")
+        if recover_signer(msg, body.signature) != case["wallet"]:
+            raise _auth_failed(request, case["wallet"], case["resource_id"], "signer mismatch")
+        now = time.time()
+        case.update(resolved=True, status="RESOLVED", wallet_verified=True, expires_at_ts=max(case["expires_at_ts"], now + 600))
+        h = db_audit(case["wallet"], "CHALLENGE_VERIFIED", request_id, {"at": int(now)})
+        case["audit"].append({"actor": case["wallet"], "event": "CHALLENGE_VERIFIED", "at": _iso(now), "payload_hash": h})
+        token = issue_access_token(request_id, case["wallet"], case["resource_id"], case["expires_at_ts"])
+        persist_cases()
+        return {**customer_payload(request_id, "RESOLVED"), "access_token": token}
 
 
 # ------------------------------------------------------------------ protected resource

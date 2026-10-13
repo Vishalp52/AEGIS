@@ -70,3 +70,31 @@ def test_reset_clears_persisted_cases(client, scenarios):
     client.post('/access/request', json={'wallet': scenarios['A']['wallet']})
     assert client.post('/demo/reset').status_code == 200
     assert state.load_cases_into_memory() == 0
+
+
+@pytest.mark.parametrize('invalid_state', ['expired', 'revoked'])
+def test_invalidated_challenge_cannot_issue_grant(client, invalid_state):
+    account = Account.create()
+    result = client.post('/access/request', json={'wallet': account.address, 'demo_scenario': 'A'}).json()
+    rid = result['request_id']
+    case = store.cases[rid]
+    case['decision'] = 'CHALLENGE'
+    challenge = client.get(f'/access/{rid}/challenge').json()
+    body = {'nonce': challenge['nonce'], 'signature': '0x' + account.sign_message(
+        encode_defunct(text=challenge['message'])).signature.hex().removeprefix('0x')}
+    if invalid_state == 'expired':
+        case['expires_at_ts'] = time.time() - 1
+    else:
+        case['revoked'] = True
+    assert client.get(f'/access/{rid}/challenge').status_code == 409
+    assert client.post(f'/access/{rid}/verify', json=body).status_code == 409
+    assert not case.get('resolved')
+
+
+def test_employee_cannot_claim_revoked_case_is_restored(client):
+    result = client.post('/access/request', json={'wallet': '0x' + 'c' * 40, 'demo_scenario': 'C'}).json()
+    rid = result['request_id']
+    store.cases[rid]['revoked'] = True
+    response = client.post(f'/cases/{rid}/review', json={'disposition': 'CUSTOMER_VERIFIED'})
+    assert response.status_code == 409
+    assert not store.cases[rid].get('resolved')

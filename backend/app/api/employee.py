@@ -177,6 +177,8 @@ def _review_case(case_id: str, req: ReviewRequest, who: Principal):
     if req.disposition in STORABLE and not case.get("incident_id"):
         incident = remember_incident(case, req.disposition, who.name)
     if req.disposition == "CUSTOMER_VERIFIED":
+        if case.get("revoked"):
+            raise HTTPException(409, "revoked access cannot be restored; create a new evaluation")
         case["resolved"] = True
         case["expires_at_ts"] = max(case["expires_at_ts"], now + 600)
     case["status"] = {"NEEDS_MORE_EVIDENCE": "OPEN", "CUSTOMER_VERIFIED": "RESOLVED"}.get(req.disposition, "CLOSED")

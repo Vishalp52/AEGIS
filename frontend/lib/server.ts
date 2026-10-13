@@ -36,6 +36,10 @@ export function sameOrigin(request: Request) {
   return request.headers.get("origin") === (process.env.APP_ORIGIN || new URL(request.url).origin);
 }
 
+export class RequestBodyError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
 export async function boundedBody(request: Request) {
   if (!request.body) return "";
   const reader = request.body.getReader();
@@ -45,7 +49,7 @@ export async function boundedBody(request: Request) {
     const { value, done } = await reader.read();
     if (done) break;
     size += value.length;
-    if (size > 32768) { await reader.cancel(); throw new Error("Request too large"); }
+    if (size > 32768) { await reader.cancel(); throw new RequestBodyError("Request too large", 413); }
     chunks.push(value);
   }
   return Buffer.concat(chunks).toString("utf8");

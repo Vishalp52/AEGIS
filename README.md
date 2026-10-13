@@ -228,3 +228,9 @@ If the remote already has commits, clone it first and copy the completed source 
 - **Registry skipped:** both the address and oracle key are required. **Failed:** verify chain ID, oracle address, funding and deployed bytecode. **Submitted:** refresh the receipt after confirmation.
 - **Restored access denied:** expired or revoked cases require a fresh evaluation; confirmed incidents cannot be undone by a customer signature.
 - **Unexpected replay results:** history affects features. Reset a dedicated demo database before recording comparable runs.
+
+## Latest wallet and API audit
+
+See [the October 13 wallet and API check](docs/API_WALLET_CHECK.md) for the fixes, 231 backend tests, 11 frontend tests and signed-wallet browser results. Run `npm test` from frontend to execute the wallet and proxy regression tests. Wallet extensions must be installed in the browser opening the site; embedded app browsers may not expose them.
+
+The replacement Gemini credential can list models, but real generation returned provider HTTP 503 during this check. The API's deterministic fallback passed. GitHub Actions has a manual **Live Gemini API check** workflow using the encrypted `GEMINI_API_KEY` repository secret so generation can be rechecked without committing credentials. This secret must also be configured separately in a hosting platform's private backend environment.

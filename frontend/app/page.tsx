@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, post, type Customer, type Evaluation, type Scenario } from "@/lib/api";
 import { connectWallet, networkName, signMessage } from "@/lib/wallet";
 
@@ -8,6 +8,7 @@ type Vault = { data: { title: string; records: { id: string; dataset: string; ro
 const readable = (error: unknown) => error instanceof Error ? error.message : "The request could not be completed.";
 
 export default function Home() {
+  const revision = useRef(0);
   const [wallet, setWallet] = useState("");
   const [mode, setMode] = useState<"live" | "demo">("live");
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -23,19 +24,24 @@ export default function Home() {
   useEffect(() => {
     api<{ status: string }>("/health").then(() => setOnline(true)).catch(() => setOnline(false));
     api<{ scenarios: Scenario[] }>("/demo/scenarios").then(value => { setScenarios(value.scenarios); setMode("demo"); }).catch(() => {});
-    const reset = () => { setWallet(""); setToken(null); setVault(null); setResult(null); setCustomer(null); };
+  }, []);
+
+  useEffect(() => {
+    const reset = () => { revision.current++; setWallet(""); setToken(null); setVault(null); setResult(null); setCustomer(null); };
     window.ethereum?.on?.("accountsChanged", reset);
     window.ethereum?.on?.("chainChanged", reset);
-    return () => { window.ethereum?.removeListener?.("accountsChanged", reset); window.ethereum?.removeListener?.("chainChanged", reset); };
-  }, []);
+    window.ethereum?.on?.("disconnect", reset);
+    return () => { window.ethereum?.removeListener?.("accountsChanged", reset); window.ethereum?.removeListener?.("chainChanged", reset); window.ethereum?.removeListener?.("disconnect", reset); };
+  }, [wallet]);
 
   async function task(label: string, action: () => Promise<void>) {
     setBusy(label); setError("");
     try { await action(); } catch (error) { setError(readable(error)); } finally { setBusy(""); }
   }
-  function clear() { setResult(null); setCustomer(null); setToken(null); setVault(null); }
+  function clear() { revision.current++; setResult(null); setCustomer(null); setToken(null); setVault(null); }
   async function evaluate() {
     clear();
+    const current = revision.current;
     const address = wallet || (mode === "demo" ? scenarios.find(item => item.key === scenario)?.wallet : null);
     if (!address) throw new Error("Connect your wallet first.");
     let proof = {};
@@ -44,13 +50,16 @@ export default function Home() {
       proof = { nonce: nonce.nonce, signature: await signMessage(wallet, nonce.message) };
     }
     const evaluation = await api<Evaluation>("/access/request", post({ wallet: address, resource_id: "research-vault", action: "read", ...proof, ...(mode === "demo" ? { demo_scenario: scenario } : {}) }));
+    if (current !== revision.current) return;
     setResult(evaluation); setCustomer(evaluation.customer); setToken(evaluation.access_token);
   }
   async function verify() {
     if (!result || !wallet || wallet !== result.wallet.toLowerCase()) throw new Error("Connect the same wallet used for this request. For a demo challenge, connect first and run the scenario again.");
+    const current = revision.current;
     const resume = customer?.decision === "RESOLVED";
     const challenge = await api<{ nonce: string; message: string }>(`/access/${result.request_id}/${resume ? "resume" : "challenge"}`);
     const verified = await api<Customer & { access_token: string }>(`/access/${result.request_id}/${resume ? "resume" : "verify"}`, post({ nonce: challenge.nonce, signature: await signMessage(wallet, challenge.message) }));
+    if (current !== revision.current) return;
     setCustomer(verified); setToken(verified.access_token);
   }
 
@@ -69,9 +78,9 @@ export default function Home() {
       </section>
       <section className="panel decision-panel" aria-live="polite"><p className="eyebrow">02 · YOUR SECURITY STATUS</p>{customer ? <><span className={`decision ${customer.decision.toLowerCase()}`}>{customer.decision}</span><h2>{customer.title}</h2><p className="lede small">{customer.message}</p><p className="hint">Support code <strong>{customer.support_code}</strong>{result?.simulated ? " · Simulated evidence" : ""}</p>
         {customer.decision === "CHALLENGE" && <button className="primary" disabled={!!busy} onClick={() => task("Verifying signature", verify)}>Verify with wallet signature</button>}
-        {(customer.decision === "REVIEW" || customer.decision === "RESTRICT") && <button className="secondary" disabled={!!busy} onClick={() => task("Checking review", async () => { if (result) setCustomer(await api<Customer>(`/customer/status/${result.request_id}`)); })}>Refresh review status</button>}
+        {(customer.decision === "REVIEW" || customer.decision === "RESTRICT") && <button className="secondary" disabled={!!busy} onClick={() => task("Checking review", async () => { const current = revision.current; if (result) { const status = await api<Customer>(`/customer/status/${result.request_id}`); if (current === revision.current) setCustomer(status); } })}>Refresh review status</button>}
         {customer.decision === "RESOLVED" && !token && <button className="primary" disabled={!!busy} onClick={() => task("Restoring reviewed access", verify)}>Sign to restore access</button>}
-        {token && <button className="primary" disabled={!!busy} onClick={() => task("Opening vault", async () => setVault(await api<Vault>("/vault/research-vault", { headers: { Authorization: `Bearer ${token}` } })))}>Open protected vault →</button>}
+        {token && <button className="primary" disabled={!!busy} onClick={() => task("Opening vault", async () => { const current = revision.current; const content = await api<Vault>("/vault/research-vault", { headers: { Authorization: `Bearer ${token}` } }); if (current === revision.current) setVault(content); })}>Open protected vault →</button>}
       </> : <div className="empty"><span className="lock-icon" aria-hidden="true">◇</span><h2>Protected until approved</h2><p>Start an access request to see your security status and the next step.</p></div>}</section>
     </div>
     {vault && <section className="panel vault"><p className="eyebrow">03 · AUTHORIZED CONTENT</p><h2>{vault.data.title}</h2><p className="hint">Sample private resource returned by the protected API after token verification.</p><div className="records">{vault.data.records.map(row => <article key={row.id}><span className="chip">{row.id}</span><h3>{row.dataset}</h3><p>{row.rows.toLocaleString()} records</p></article>)}</div></section>}

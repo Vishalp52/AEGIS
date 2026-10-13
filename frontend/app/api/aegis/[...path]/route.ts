@@ -1,4 +1,4 @@
-import { backendURL, employeeKey, sameOrigin, boundedBody } from "@/lib/server";
+import { backendURL, employeeKey, sameOrigin, boundedBody, RequestBodyError } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +28,9 @@ async function forward(request: Request, context: Context) {
       "Content-Type": "application/json", "Cache-Control": "no-store",
       ...(result.headers.get("retry-after") ? { "Retry-After": result.headers.get("retry-after")! } : {}),
     } });
-  } catch { return Response.json({ detail: "The security service is unavailable. Please retry shortly." }, { status: 503 }); }
+  } catch (error) {
+    if (error instanceof RequestBodyError) return Response.json({ detail: error.message }, { status: error.status });
+    return Response.json({ detail: "The security service is unavailable. Please retry shortly." }, { status: 503 }); }
 }
 
 export const GET = forward;

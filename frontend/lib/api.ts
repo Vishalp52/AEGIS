@@ -20,9 +20,12 @@ export type CasePacket = {
 };
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...init.headers }, cache: "no-store" });
-  const body = await response.json();
-  if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : `Request failed (${response.status})`);
+  const headers = new Headers(init.headers);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const response = await fetch(path, { ...init, headers, cache: "no-store" });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : `Request failed (${response.status}). Please retry shortly.`);
+  if (body === null) throw new Error("The server returned an invalid response. Please retry shortly.");
   return body as T;
 }
 export const api = <T,>(path: string, init?: RequestInit) => request<T>(`/api/aegis${path}`, init);
