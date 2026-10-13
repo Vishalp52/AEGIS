@@ -234,3 +234,7 @@ If the remote already has commits, clone it first and copy the completed source 
 See [the October 13 wallet and API check](docs/API_WALLET_CHECK.md) for the fixes, 231 backend tests, 11 frontend tests and signed-wallet browser results. Run `npm test` from frontend to execute the wallet and proxy regression tests. Wallet extensions must be installed in the browser opening the site; embedded app browsers may not expose them.
 
 The replacement Gemini credential can list models, but real generation returned provider HTTP 503 during this check. The API's deterministic fallback passed. GitHub Actions has a manual **Live Gemini API check** workflow using the encrypted `GEMINI_API_KEY` repository secret so generation can be rechecked without committing credentials. This secret must also be configured separately in a hosting platform's private backend environment.
+
+## Visual identity
+
+The AEGIS identity uses an original geometric A, a custom vector wordmark, near-black surfaces and an electric-green accent. Website assets are in `frontend/public/brand`, with the browser icon in `frontend/app/icon.svg`. The upload-ready 1200 × 1200 PNG and editable SVG are in `docs/submission`. The customer and employee interfaces share the same identity. The submission pack in that folder includes entry copy, recording scripts and readiness checks; deployment and live-provider limitations still apply.

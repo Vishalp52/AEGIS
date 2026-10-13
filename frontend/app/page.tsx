@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { api, post, type Customer, type Evaluation, type Scenario } from "@/lib/api";
 import { connectWallet, networkName, signMessage } from "@/lib/wallet";
@@ -64,8 +65,8 @@ export default function Home() {
   }
 
   return <main className="shell">
-    <header className="topbar"><Link href="/" className="brand"><span className="brand-mark">A</span>AEGIS <small>BEHAVIORAL SECURITY</small></Link><nav><span className={`status ${online ? "good" : "muted"}`}>{online ? "Security service online" : "Service offline"}</span><Link href="/employee">Employee console ↗</Link></nav></header>
-    <section className="hero"><div><p className="eyebrow">MONAD · CONTINUOUS AUTHORIZATION</p><h1>Your wallet.<br/><span>A second layer of trust.</span></h1><p className="lede">Access a protected research vault through behavior-based security. Every decision has evidence, a clear next step, and a path to human review.</p></div><div className="orbit" aria-hidden="true"><div className="orbit-ring"><span>ACCESS<br/><strong>VERIFIED</strong></span></div><i/><b/></div></section>
+    <header className="topbar"><Link href="/" className="brand"><Image className="brand-symbol" src="/brand/aegis-mark.svg" width={36} height={36} alt=""/><Image className="brand-wordmark" src="/brand/aegis-wordmark.svg" width={124} height={28} alt="AEGIS"/> <small>BEHAVIORAL SECURITY</small></Link><nav><span className={`status ${online ? "good" : "muted"}`}>{online ? "Security service online" : "Service offline"}</span><Link href="/employee">Employee console ↗</Link></nav></header>
+    <section className="hero"><div><p className="eyebrow">MONAD · CONTINUOUS AUTHORIZATION</p><h1>Your wallet.<br/><span>A second layer of trust.</span></h1><p className="lede">Access a protected research vault through behavior-based security. Every decision has evidence, a clear next step, and a path to human review.</p></div><div className="identity-visual" aria-hidden="true"><span className="visual-label">AEGIS / SECURITY INFRASTRUCTURE</span><Image src="/brand/aegis-mark.svg" width={240} height={240} alt="" preload/><span className="visual-coordinate">WALLET PROOF + BEHAVIORAL INTELLIGENCE</span></div></section>
     <div className="workspace">
       <section className="panel"><div className="panel-heading"><div><p className="eyebrow">01 · REQUEST ACCESS</p><h2>Research Data Vault</h2></div><span className="chip">Protected resource</span></div>
         <p className="muted">{networkName} · Wallet signatures prove ownership. The security engine evaluates the evidence before granting access.</p>

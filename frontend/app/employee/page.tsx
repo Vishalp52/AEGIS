@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { api, post, request, type CasePacket, type CaseRow } from "@/lib/api";
 
@@ -22,7 +23,7 @@ export default function Employee() {
   async function refresh() { setCases((await api<{ cases: CaseRow[] }>(`/cases${filter ? `?status=${filter}` : ""}`)).cases); }
   async function open(id: string) { setPacket(await api<CasePacket>(`/cases/${id}`)); setNote(""); }
 
-  return <main className="shell employee"><header className="topbar"><Link href="/" className="brand"><span className="brand-mark">A</span>AEGIS <small>INVESTIGATION CONSOLE</small></Link><nav><Link href="/">Customer view ↗</Link>{authenticated && <button className="secondary" onClick={() => action(async () => { await request("/api/session", { method: "DELETE" }); setAuthenticated(false); setPacket(null); setCases([]); })}>Sign out</button>}</nav></header>
+  return <main className="shell employee"><header className="topbar"><Link href="/" className="brand"><Image className="brand-symbol" src="/brand/aegis-mark.svg" width={36} height={36} alt=""/><Image className="brand-wordmark" src="/brand/aegis-wordmark.svg" width={124} height={28} alt="AEGIS"/> <small>INVESTIGATION CONSOLE</small></Link><nav><Link href="/">Customer view ↗</Link>{authenticated && <button className="secondary" onClick={() => action(async () => { await request("/api/session", { method: "DELETE" }); setAuthenticated(false); setPacket(null); setCases([]); })}>Sign out</button>}</nav></header>
     <div className="page-heading"><p className="eyebrow">HUMAN REVIEW · DETERMINISTIC CONTROL</p><h1>Evidence before action.</h1><p className="muted">Inspect behavior, compare interpretations, and record a reviewed disposition.</p></div>
     {error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="notice">{message}</p>}
     {!authenticated ? <form className="panel login" onSubmit={event => { event.preventDefault(); action(async () => { await request("/api/session", post({ key })); setKey(""); setAuthenticated(true); }); }}><h2>Employee sign in</h2><p className="muted">Use an employee or admin key from your local backend configuration.</p><label htmlFor="employee-key">Access key</label><input id="employee-key" type="password" autoComplete="current-password" value={key} onChange={event => setKey(event.target.value)} required/><button className="primary" disabled={busy}>Sign in</button><p className="hint">The key is held in an encrypted, HTTP-only session cookie. It is never saved to browser local storage.</p></form> : <div className="investigation">
