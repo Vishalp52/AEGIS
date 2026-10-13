@@ -36,7 +36,7 @@ We built a customer interface and an employee console around that process. Custo
 
 Our goal is to make AEGIS something companies can integrate into their existing applications and use across protected APIs, customer portals and sensitive workflows. We want it to be widely implemented because it gives developers an access-control flow and gives security teams a practical way to investigate unusual activity. We plan to start with focused pilots and expand after we can show useful results.
 
-The current version is a hosted proof of concept on Monad Testnet. Envio and Alchemy passed a combined live data check, and Dynamic's login is deployed. The full wallet-signing walkthrough is still pending. Our anomaly model uses synthetic training data, hosted Gemini responses are mocked, and the Solidity registry is implemented and tested locally but not publicly deployed. Security review and broader testing are part of the work needed before enterprise rollout.
+The current version is a hosted proof of concept on Monad Testnet. Envio and Alchemy passed a combined live data check, and Dynamic's login is deployed. The full wallet-signing walkthrough is still pending. Our anomaly model uses synthetic training data, hosted Gemini generation has passed a live check, and the Solidity registry is implemented and tested locally but not publicly deployed. Security review and broader testing are part of the work needed before enterprise rollout.
 
 ## Gtm
 
@@ -56,4 +56,4 @@ Open https://aegis-web-8nd8.onrender.com/ to try the customer flow. Simulated re
 
 The employee console is at https://aegis-web-8nd8.onrender.com/employee. Use the separate judge key provided in this private field to view cases and test reviews. This is a shared demonstration, so review actions affect the demo cases. Please use simulated cases for review testing.
 
-Dynamic is in Sandbox, hosted Gemini responses are mocked and the optional registry is not publicly deployed. Setup and test instructions are in our GitHub README.
+Dynamic is in Sandbox, hosted Gemini generation has passed a live check and the optional registry is not publicly deployed. Setup and test instructions are in our GitHub README.

@@ -1,6 +1,6 @@
 # Envio, Alchemy and Dynamic
 
-The Envio and Alchemy combined pipeline passed a local live Monad Testnet check on October 13, 2026. Dynamic account configuration is complete; hosted wallet signing remains to be verified. Do not claim bounty eligibility from installed packages, mocked tests or simulated replay alone. The deployed site is https://aegis-web-8nd8.onrender.com and the repository is https://github.com/Vishalp52/AEGIS.
+The Envio and Alchemy combined pipeline passed local and hosted live Monad Testnet checks on October 13, 2026. Dynamic account configuration is complete; hosted wallet signing remains to be verified. Do not claim bounty eligibility from installed packages, mocked tests or simulated replay alone. The deployed site is https://aegis-web-8nd8.onrender.com and the repository is https://github.com/Vishalp52/AEGIS.
 
 ## Account setup
 

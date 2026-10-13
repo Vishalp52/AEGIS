@@ -8,7 +8,7 @@ We are building AEGIS to add behavioral security to wallet-based access. A signa
 
 AEGIS brings together Dynamic wallet connection, Envio activity data, Alchemy verification, an Isolation Forest and deterministic rules. It can allow access, ask for another signature, send a case to an employee or restrict access. The employee console shows the evidence and provides a review and recovery process.
 
-We want to develop this into an enterprise product that teams can use across private APIs and wallet-enabled applications. This release is our hackathon proof of concept. The website and backend are deployed, and Envio and Alchemy passed a combined live Monad Testnet check. Dynamic login is working; the complete user-controlled signing walkthrough is still pending. The model was trained on synthetic data, hosted Gemini is mocked, and the registry is tested locally but has no public deployment yet.
+We want to develop this into an enterprise product that teams can use across private APIs and wallet-enabled applications. This release is our hackathon proof of concept. The website and backend are deployed, and Envio and Alchemy passed a combined live Monad Testnet check. Dynamic login is working; the complete user-controlled signing walkthrough is still pending. The model was trained on synthetic data, hosted Gemini generation has passed a live check, and the registry is tested locally but has no public deployment yet.
 
 ## Access for judges
 
@@ -211,7 +211,7 @@ cd ../contracts
 forge test
 ```
 
-Our latest backend run on October 13 passed 292 tests, including the section 7 fixes. All 18 frontend tests, lint and the production build passed. Earlier checks passed 12 contract tests (including 256 fuzz runs), frontend tests, lint and a production build. Browser workflows and local chain integration are recorded in [VALIDATION.md](VALIDATION.md).
+Our latest backend run on October 13 passed 292 tests, including the section 7 fixes. All 20 frontend tests, lint and the production build passed. Earlier checks passed 12 contract tests (including 256 fuzz runs), frontend tests, lint and a production build. Browser workflows and local chain integration are recorded in [VALIDATION.md](VALIDATION.md).
 
 For containers, run `python scripts/setup.py --mode demo`, then `docker compose up --build` from the root. The compose file binds to localhost, stores SQLite in a named volume, and runs one backend process. The Docker services build and run on Render; Docker was not available for a local container check. For hosting, use HTTPS, set the frontend's exact `APP_ORIGIN`, set `COOKIE_SECURE=true`, configure private environment variables, expose only the frontend publicly where possible, and attach durable backend storage. Do not use an ephemeral filesystem for the database. Follow the [Monad guide](docs/MONAD_GUIDE.md) for funded testnet deployment and submission.
 
@@ -247,7 +247,7 @@ If the remote already has commits, clone it first and copy the completed source 
 
 See [the October 13 wallet and API check](docs/API_WALLET_CHECK.md) for earlier wallet and API fixes and signed test-wallet browser results. The newer sponsor work brings the backend suite to 292 tests. Run `npm test` from frontend to execute the wallet and proxy regression tests. Wallet extensions must be installed in the browser opening the site; embedded app browsers may not expose them.
 
-The replacement Gemini credential can list models, but real generation returned provider HTTP 503 during this check. The API's deterministic fallback passed. GitHub Actions has a manual **Live Gemini API check** workflow using the encrypted `GEMINI_API_KEY` repository secret so generation can be rechecked without committing credentials. This secret must also be configured separately in a hosting platform's private backend environment.
+The hosted Gemini integration passed a real generation check on October 13 with mode `auto` and `gemini_status: ok`. Earlier provider outages exercised the deterministic fallback. GitHub Actions has a manual **Live Gemini API check** workflow using the encrypted `GEMINI_API_KEY` repository secret so generation can be rechecked without committing credentials. This secret must also be configured separately in a hosting platform's private backend environment.
 
 ## Visual identity
 
@@ -255,7 +255,7 @@ The AEGIS identity uses an original geometric A, a custom vector wordmark, near-
 
 ## Public hosting
 
-Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Our public website and private backend are already deployed with persistent case storage. The initial hosted demo uses labeled mock AI and requires wallet signatures; configure and verify Gemini and the Monad registry separately.
+Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Our public website and private backend are already deployed with persistent case storage. The hosted app uses real Gemini interpretation when triggered and requires wallet signatures. Replay activity remains labeled as simulated. Public registry deployment is still pending.
 
 ## Sponsor integrations
 
