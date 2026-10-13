@@ -22,7 +22,7 @@ from app.chain.types import ChainTx, WalletActivity, chain_quantity
 log = logging.getLogger("aegis.chain.envio")
 
 TX_FIELDS = ["block_number", "hash", "from", "to", "value", "input"]
-BLOCK_FIELDS = ["number", "timestamp"]
+BLOCK_FIELDS = ["number", "timestamp", "hash"]
 MAX_PAGES = 20
 
 MAX_INDEX_LAG_SECONDS = 60
@@ -37,6 +37,7 @@ class EnvioHyperSync:
         self.url = (url if url is not None else settings.envio_hypersync_url).rstrip("/")
         self.token = token if token is not None else settings.envio_api_token
         self.timeout = timeout or settings.chain_timeout_seconds
+        self.block_hashes: dict[int, str] = {}
 
     @property
     def enabled(self) -> bool:
@@ -103,6 +104,11 @@ class EnvioHyperSync:
             "include_all_blocks": True,
             "field_selection": {"block": BLOCK_FIELDS},
         })
+        chunks = resp["data"] if isinstance(resp["data"], list) else [resp["data"]]
+        for chunk in chunks:
+            for block in chunk.get("blocks", []):
+                if block.get("hash"):
+                    self.block_hashes[_int(block["number"])] = block["hash"]
         _, timestamps = self._parse(resp)
         if number not in timestamps:
             raise ValueError("HyperSync did not return the requested block timestamp")
@@ -182,14 +188,14 @@ class EnvioHyperSync:
         try:
             first = self.first_seen_block(wallet, latest + 1)
         except Exception as exc:
-            log.debug("first_seen lookup failed: %s", exc)
+            log.debug("first_seen lookup failed (%s)", type(exc).__name__)
             notes.append("Earliest wallet activity could not be established; wallet age is unknown")
         complete = now - latest_timestamp <= MAX_INDEX_LAG_SECONDS
         if not complete:
             notes.append("Envio index is behind the current time; recent activity may be missing")
         act = WalletActivity(wallet=wallet.lower(), source="envio", txs=txs, latest_block=latest,
                              first_seen_block=first, window_seconds=window_seconds,
-                             complete_window=complete, notes=notes)
+                             complete_window=complete, notes=notes, latest_block_hash=self.block_hashes.get(latest))
         act.notes.append(f"Envio HyperSync blocks {start}-{latest}: {len(txs)} txs")
         return act
 
@@ -201,5 +207,5 @@ def safe_wallet_activity(wallet: str, now: Optional[float] = None) -> Optional[W
     try:
         return client.wallet_activity(wallet, now=now)
     except Exception as exc:
-        log.warning("Envio HyperSync unavailable, falling back: %s", exc)
+        log.warning("Envio HyperSync unavailable, falling back (%s)", type(exc).__name__)
         return None

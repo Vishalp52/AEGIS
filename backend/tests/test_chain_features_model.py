@@ -6,7 +6,7 @@ import pytest
 from app.chain import envio as envio_mod
 from app.chain.demo_replay import SCENARIOS, build_activity
 from app.chain.envio import EnvioHyperSync
-from app.chain.monad_rpc import MonadRPC
+from app.chain.monad_rpc import MonadRPC, settings as rpc_settings
 from app.chain.registry import RegistryWriter, to_bytes32
 from app.chain.types import ChainTx, WalletActivity
 from app.features.baselines import PopulationStats, deviation_signature
@@ -92,7 +92,7 @@ class FakeEth:
     def __init__(self, blocks):
         self.blocks = blocks
         self.block_number = max(blocks)
-        self.chain_id = 143
+        self.chain_id = rpc_settings.monad_chain_id
 
     def get_block(self, n, full_transactions=True):
         return self.blocks[n]

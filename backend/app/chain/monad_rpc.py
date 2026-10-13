@@ -38,7 +38,7 @@ def _has_calldata(inp) -> bool:
 
 class MonadRPC:
     def __init__(self, rpc_url: Optional[str] = None, timeout: Optional[float] = None):
-        self.rpc_url = rpc_url or settings.monad_rpc_url
+        self.rpc_url = rpc_url or settings.effective_rpc_url
         self.w3 = Web3(Web3.HTTPProvider(self.rpc_url, request_kwargs={"timeout": timeout or settings.chain_timeout_seconds}))
 
     # ---- basic reads -------------------------------------------------
@@ -103,7 +103,7 @@ class MonadRPC:
         try:
             return self._fetch_block(n)
         except Exception as exc:
-            log.debug("block %s fetch failed: %s", n, exc)
+            log.debug("block %s fetch failed (%s)", n, type(exc).__name__)
             return None
 
     # ---- main entry --------------------------------------------------
@@ -111,12 +111,14 @@ class MonadRPC:
         wallet = wallet.lower()
         scan_blocks = settings.rpc_scan_blocks if scan_blocks is None else scan_blocks
         t0 = time.time()
+        if self.chain_id() != settings.monad_chain_id:
+            raise ValueError("RPC network does not match MONAD_CHAIN_ID")
         latest = self.latest_block()
         nonce = None
         try:
             nonce = self.nonce(wallet)
         except Exception as exc:
-            log.debug("nonce lookup failed: %s", exc)
+            log.debug("nonce lookup failed (%s)", type(exc).__name__)
 
         blocks = self.recent_blocks(scan_blocks, latest)
         if not blocks:
@@ -125,7 +127,7 @@ class MonadRPC:
         window = max(0, blocks[-1][1] - blocks[0][1])
 
         act = WalletActivity(
-            wallet=wallet, source="rpc", txs=txs, latest_block=latest, nonce=nonce,
+            wallet=wallet, source="alchemy" if settings.alchemy_rpc_url and self.rpc_url == settings.alchemy_rpc_url else "rpc", txs=txs, latest_block=latest, nonce=nonce,
             window_seconds=window,
             complete_window=False,
         )
@@ -144,5 +146,5 @@ def safe_wallet_activity(wallet: str) -> Optional[WalletActivity]:
         rpc = MonadRPC()
         return rpc.wallet_activity(wallet)
     except Exception as exc:
-        log.warning("Monad RPC unavailable: %s", exc)
+        log.warning("Monad RPC unavailable (%s)", type(exc).__name__)
         return None

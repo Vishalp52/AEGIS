@@ -174,7 +174,7 @@ def fake_rpc(monkeypatch, blocks, url="https://unused"):
         return block
 
     monkeypatch.setattr(rpc.w3, "eth", SimpleNamespace(
-        block_number=max(blocks), get_block=get_block, get_transaction_count=lambda wallet: 0))
+        chain_id=monad_rpc.settings.monad_chain_id, block_number=max(blocks), get_block=get_block, get_transaction_count=lambda wallet: 0))
     return rpc
 
 

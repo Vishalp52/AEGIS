@@ -44,6 +44,8 @@ def _default_risk_config() -> str:
 @dataclass(frozen=True)
 class Settings:
     monad_rpc_url: str = field(default_factory=lambda: os.getenv("MONAD_RPC_URL", "https://testnet-rpc.monad.xyz"))
+    alchemy_rpc_url: str = field(default_factory=lambda: os.getenv("ALCHEMY_RPC_URL", ""))
+    monad_chain_id: int = field(default_factory=lambda: _env_int("MONAD_CHAIN_ID", 10143))
     database_url: str = field(default_factory=lambda: os.getenv("DATABASE_URL", "sqlite:///./aegis.db"))
     risk_config_path: str = field(default_factory=lambda: os.getenv("RISK_CONFIG_PATH") or _default_risk_config())
 
@@ -91,6 +93,10 @@ class Settings:
             raise ValueError("GEMINI_TIMEOUT_SECONDS must be finite and positive")
         if not math.isfinite(self.gemini_trigger_score) or not 0 <= self.gemini_trigger_score <= 1:
             raise ValueError("GEMINI_TRIGGER_SCORE must be between 0 and 1")
+
+    @property
+    def effective_rpc_url(self) -> str:
+        return self.alchemy_rpc_url or self.monad_rpc_url
 
     @property
     def production(self) -> bool:

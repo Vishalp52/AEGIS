@@ -43,6 +43,7 @@ class WalletActivity:
     complete_window: bool = True
     notes: list[str] = field(default_factory=list)
     simulated: bool = False
+    latest_block_hash: Optional[str] = None
 
     def __post_init__(self):
         self.wallet = self.wallet.lower()

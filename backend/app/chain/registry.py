@@ -59,7 +59,7 @@ class RegistryWriter:
         try:
             digest = to_bytes32(evidence_hash)
             from web3 import Web3
-            w3 = Web3(Web3.HTTPProvider(settings.monad_rpc_url, request_kwargs={"timeout": settings.chain_timeout_seconds}))
+            w3 = Web3(Web3.HTTPProvider(settings.effective_rpc_url, request_kwargs={"timeout": settings.chain_timeout_seconds}))
             acct = w3.eth.account.from_key(self.key)
             chain_id = int(w3.eth.chain_id)
             if chain_id != int(os.getenv('MONAD_CHAIN_ID', '10143')):
@@ -92,7 +92,7 @@ class RegistryWriter:
         from web3.exceptions import TransactionNotFound
         if not re.fullmatch(r'0x[0-9a-fA-F]{64}', tx_hash):
             raise ValueError('invalid transaction hash')
-        w3 = Web3(Web3.HTTPProvider(settings.monad_rpc_url, request_kwargs={'timeout': settings.chain_timeout_seconds}))
+        w3 = Web3(Web3.HTTPProvider(settings.effective_rpc_url, request_kwargs={'timeout': settings.chain_timeout_seconds}))
         try:
             receipt = w3.eth.get_transaction_receipt(tx_hash)
         except TransactionNotFound:

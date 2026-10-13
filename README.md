@@ -242,3 +242,7 @@ The AEGIS identity uses an original geometric A, a custom vector wordmark, near-
 ## Public hosting
 
 Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Account setup and approval of the paid services are required before publication. The initial hosted demo uses labeled mock AI and requires wallet signatures; configure and verify Gemini and the Monad registry separately.
+
+## Sponsor integrations
+
+Envio indexed wallet history, Alchemy RPC corroboration and Dynamic wallet signing are documented in [the sponsor setup and verification guide](docs/SPONSOR_INTEGRATIONS.md). The implementations require account configuration and live verification before any bounty eligibility claim. The live website is https://aegis-web-8nd8.onrender.com.

@@ -37,7 +37,7 @@ def main():
                     for line in path.read_text().splitlines():
                         if '=' in line and not line.startswith('#'):
                             key, value = line.split('=', 1)
-                            if any(word in key for word in ['KEY', 'SECRET']) and len(value) >= 24:
+                            if (any(word in key for word in ['KEY', 'SECRET', 'TOKEN']) or key == 'ALCHEMY_RPC_URL') and len(value) >= 24:
                                 secrets.append(value.encode())
             for name in names:
                 data = archive.read(name)
