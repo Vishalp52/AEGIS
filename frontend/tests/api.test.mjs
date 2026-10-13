@@ -43,3 +43,15 @@ test('session rejects malformed JSON, null payloads and oversized login input', 
     assert.equal(response.status, expected);
   }
 });
+test('hosted origin accepts the public HTTPS origin and rejects an unrelated origin', () => {
+  const app = load('lib/server.ts', { 'node:crypto': crypto, 'next/headers': {} }, { process: { env: { RENDER_EXTERNAL_URL: 'https://aegis-example.onrender.com', AEGIS_API_HOSTPORT: 'aegis-api:8000' } } });
+  assert.equal(app.backendURL, 'http://aegis-api:8000');
+  assert.equal(app.sameOrigin(new Request('http://localhost:3000/api/session', { headers: { Origin: 'https://aegis-example.onrender.com' } })), true);
+  assert.equal(app.sameOrigin(new Request('http://localhost:3000/api/session', { headers: { Origin: 'https://untrusted.example' } })), false);
+});
+test('explicit configuration takes precedence over hosting defaults', () => {
+  const app = load('lib/server.ts', { 'node:crypto': crypto, 'next/headers': {} }, { process: { env: { APP_ORIGIN: 'https://aegis.example', RENDER_EXTERNAL_URL: 'https://aegis-example.onrender.com', AEGIS_API_URL: 'https://api.example/', AEGIS_API_HOSTPORT: 'aegis-api:8000' } } });
+  assert.equal(app.backendURL, 'https://api.example');
+  assert.equal(app.sameOrigin(new Request('http://localhost/api/session', { headers: { Origin: 'https://aegis.example' } })), true);
+  assert.equal(app.sameOrigin(new Request('http://localhost/api/session', { headers: { Origin: 'https://aegis-example.onrender.com' } })), false);
+});

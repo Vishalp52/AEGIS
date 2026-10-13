@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 
-export const backendURL = (process.env.AEGIS_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+export const backendURL = (process.env.AEGIS_API_URL || (process.env.AEGIS_API_HOSTPORT ? `http://${process.env.AEGIS_API_HOSTPORT}` : "http://127.0.0.1:8000")).replace(/\/$/, "");
 export const cookieName = "aegis_employee";
 const developmentSecret = randomBytes(32).toString("hex");
 
@@ -33,7 +33,7 @@ export async function employeeKey(): Promise<string | null> {
 }
 
 export function sameOrigin(request: Request) {
-  return request.headers.get("origin") === (process.env.APP_ORIGIN || new URL(request.url).origin);
+  return request.headers.get("origin") === (process.env.APP_ORIGIN || process.env.RENDER_EXTERNAL_URL || new URL(request.url).origin);
 }
 
 export class RequestBodyError extends Error {

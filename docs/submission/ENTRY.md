@@ -14,9 +14,9 @@ Behavior-based access protection for Monad apps, combining wallet signatures, an
 
 Logo: upload AEGIS-logo.png from this folder. It is a 1200 by 1200 PNG under 2 MB. The SVG is an editable master, not the portal upload file.
 
-Repository: https://github.com/Vishalp52/POTUS
+Repository: https://github.com/Vishalp52/AEGIS
 
-The repository is public. Its historical URL still says POTUS; the application and documentation use AEGIS. Current checked code revision: ec3dd7d369f207c9f8ff9b4c18ccba4749bb9819. Submission materials in this delivery were prepared after that revision.
+The repository is public. Current checked code revision: ec3dd7d369f207c9f8ff9b4c18ccba4749bb9819. Submission materials in this delivery were prepared after that revision.
 
 The pasted form omitted the labels of its two 8,000-character fields. Use the following project overview and implementation text where their subjects match the actual labels. Do not paste an implementation answer into a field asking a different question.
 
@@ -151,8 +151,8 @@ The official public event page lists 1 September to 13 October. It does not esta
 
 Official event and login: https://hackathon.monad.xyz/
 Official Monad deployment instructions: https://docs.monad.xyz/guides/deploy-smart-contract/foundry
-Public source: https://github.com/Vishalp52/POTUS
-GitHub checks: https://github.com/Vishalp52/POTUS/actions
+Public source: https://github.com/Vishalp52/AEGIS
+GitHub checks: https://github.com/Vishalp52/AEGIS/actions
 
 The checklist uses the form supplied by the project owner and official public pages checked on 13 October 2026. The selected track is a reasonable fit for authorization, wallet ownership and AI-assisted infrastructure; this is a project assessment, not an organizer eligibility decision.
 

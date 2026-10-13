@@ -211,7 +211,7 @@ git add .
 git status --short
 git commit -m "Complete AEGIS application, registry and documentation"
 git branch -M main
-git remote add origin https://github.com/Vishalp52/POTUS.git
+git remote add origin https://github.com/Vishalp52/AEGIS.git
 git push -u origin main
 ```
 
@@ -238,3 +238,7 @@ The replacement Gemini credential can list models, but real generation returned 
 ## Visual identity
 
 The AEGIS identity uses an original geometric A, a custom vector wordmark, near-black surfaces and an electric-green accent. Website assets are in `frontend/public/brand`, with the browser icon in `frontend/app/icon.svg`. The upload-ready 1200 × 1200 PNG and editable SVG are in `docs/submission`. The customer and employee interfaces share the same identity. The submission pack in that folder includes entry copy, recording scripts and readiness checks; deployment and live-provider limitations still apply.
+
+## Public hosting
+
+Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Account setup and approval of the paid services are required before publication. The initial hosted demo uses labeled mock AI and requires wallet signatures; configure and verify Gemini and the Monad registry separately.

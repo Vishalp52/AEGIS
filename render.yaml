@@ -1,0 +1,65 @@
+services:
+  - type: pserv
+    name: aegis-api
+    runtime: docker
+    plan: starter
+    region: ohio
+    repo: https://github.com/Vishalp52/AEGIS
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    numInstances: 1
+    disk:
+      name: aegis-cases
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: '8000'
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:////data/aegis.db
+      - key: AEGIS_ADMIN_KEY
+        generateValue: true
+      - key: TOKEN_SECRET
+        generateValue: true
+      - key: ENABLE_DEMO
+        value: 'true'
+      - key: REQUIRE_WALLET_SIGNATURE
+        value: 'true'
+      - key: DATA_SOURCE
+        value: auto
+      - key: GEMINI_MODE
+        value: mock
+      - key: MONAD_CHAIN_ID
+        value: '10143'
+      - key: MONAD_RPC_URL
+        value: https://testnet-rpc.monad.xyz
+      - key: CORS_ORIGINS
+        value: ''
+  - type: web
+    name: aegis-web
+    runtime: docker
+    plan: starter
+    region: ohio
+    repo: https://github.com/Vishalp52/AEGIS
+    branch: main
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    numInstances: 1
+    healthCheckPath: /api/aegis/health
+    envVars:
+      - key: PORT
+        value: '3000'
+      - key: AEGIS_API_HOSTPORT
+        fromService:
+          type: pserv
+          name: aegis-api
+          property: hostport
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: NEXT_PUBLIC_MONAD_CHAIN_ID
+        value: '10143'
