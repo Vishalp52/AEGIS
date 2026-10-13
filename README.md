@@ -4,7 +4,9 @@ Behavior-based authorization for a private research API on Monad. AEGIS combines
 
 This delivery extends the supplied project through the customer UI, employee console, persistent investigations, policy recovery, and Solidity registry. It includes source, a trained model, tests, deployment files, and a [Monad submission and usage guide](docs/MONAD_GUIDE.md). The separate Word version is in `docs/AEGIS_Monad_Submission_and_User_Guide.docx`.
 
-**Delivery status:** local application and contract verification complete. Public hosting, a funded Monad testnet deployment, and hackathon form submission remain operator steps. No testnet deployment address is claimed by this repository. `docs/local-chain-validation.json` contains local Anvil transactions only.
+**Live product:** https://aegis-web-8nd8.onrender.com/ · **Repository:** https://github.com/Vishalp52/AEGIS
+
+**Delivery status (October 13, 2026):** frontend and private backend are deployed on Render. Envio and Alchemy are configured and passed a combined local check against live Monad Testnet data. Dynamic's Sandbox login is deployed with Monad Testnet enabled; a complete user-controlled wallet-signing session remains to be verified. The latest backend suite passed 237 tests. Hosted Gemini is mocked. The Solidity registry is implemented and locally tested, but no public Monad contract deployment is claimed. `docs/local-chain-validation.json` contains local Anvil transactions only. See [sponsor integrations](docs/SPONSOR_INTEGRATIONS.md) and [submission copy](docs/SUBMISSION_COPY.md). Demo and pitch videos and final portal submission remain team steps.
 
 ## Quick start in VS Code
 
@@ -35,7 +37,7 @@ Demo mode needs neither a paid AI request nor a funded wallet. To verify a signa
 
 ## Customer and employee walkthrough
 
-1. On the customer page select **Simulated replay**, then **A Normal wallet**. Request access and open the protected vault. The returned records are sample private API content.
+1. On the customer page select **Simulated replay**, then **A Normal wallet**. Request access to inspect the decision. On the hosted deployment, connect a wallet and prove ownership before opening the protected vault. The returned records are sample private API content.
 2. Select **B Slight anomaly** to observe mild deviation; the result can be ALLOW or CHALLENGE depending on current history. If challenged, connect the same wallet used for the request and sign the fresh verification message.
 3. Select **C Account-takeover style**. Its combined signals produce a hold. Open **Employee console**, sign in, and select the latest case.
 4. Inspect the risk contributions, behavior against baseline, Gemini status, benign explanations, policy trace, timeline, and audit events. Save **SIMULATED_ATTACK** with an analyst note for replay evidence. This adds a reviewed signature and revokes existing grants for that wallet.
@@ -49,8 +51,8 @@ Demo mode needs neither a paid AI request nor a funded wallet. To verify a signa
 
 | Stage | Implementation |
 |---|---|
-| 1 Wallet and protected application | Real injected-wallet connection, network check, EIP-191 nonce signatures, private vault API, customer recovery |
-| 2 Activity collection | Bounded Monad RPC scan, optional Envio adapter, explicit partial-history provenance, reproducible replay |
+| 1 Wallet and protected application | Dynamic wallet onboarding (injected-wallet fallback without a Dynamic ID), network check, EIP-191 nonce signatures, private vault API, customer recovery |
+| 2 Activity collection | Envio indexed history with Alchemy block-hash corroboration and bounded RPC fallback, explicit partial-history provenance, reproducible replay |
 | 3 Features | Eight-feature vector, baselines and deviations, application attempts plus chain activity |
 | 4 Statistical detector | Seeded Isolation Forest, trained artifact, compatibility validation, calibration CLI |
 | 5 Threat memory | Reviewed signatures, finite cosine similarity, provenance, durable reload, duplicate protection |
@@ -99,6 +101,7 @@ compose.yaml                  Optional two-service local Docker deployment
 | `REQUIRE_WALLET_SIGNATURE` | Set `true` for live use |
 | `ENABLE_DEMO` | Set `false` for live use; use separate databases for replay |
 | `DATA_SOURCE` | `none` for offline replay; `auto`, `rpc`, or `envio` for collection |
+| `ALCHEMY_RPC_URL` | Private Alchemy endpoint; takes precedence over the public Monad RPC and corroborates indexed history |
 | `MONAD_RPC_URL` / `MONAD_CHAIN_ID` | Default testnet RPC and chain `10143`; writer rejects a mismatch |
 | `RPC_SCAN_BLOCKS` | Bounded scan size, default 150; this is not full wallet history |
 | `ENVIO_HYPERSYNC_URL` / `ENVIO_API_TOKEN` | Optional indexed chain source |
@@ -118,6 +121,7 @@ See `backend/.env.example` for remaining timeouts and limits. Keep all private k
 
 | Variable | Purpose |
 |---|---|
+| `DYNAMIC_ENVIRONMENT_ID` | Public runtime environment ID; enables Dynamic onboarding and signing |
 | `AEGIS_API_URL` | Server-only backend URL; local default `http://127.0.0.1:8000` |
 | `APP_ORIGIN` | Exact browser origin; local `http://localhost:3000` |
 | `SESSION_SECRET` | At least 32 characters for AES-GCM employee sessions |
