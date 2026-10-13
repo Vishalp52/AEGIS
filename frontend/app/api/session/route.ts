@@ -18,6 +18,9 @@ export async function POST(request: Request) {
     if (typeof key !== "string" || key.length < 24 || key.length > 256) return Response.json({ detail: "Enter a valid employee or admin key" }, { status: 400 });
     const result = await fetch(`${backendURL}/health/details`, { headers: { "X-API-Key": key }, cache: "no-store", signal: AbortSignal.timeout(10000) });
     if (!result.ok) return Response.json({ detail: "Employee sign-in failed" }, { status: result.status === 401 ? 401 : 503 });
+    // A development backend without configured keys accepts any key; never open an employee session against it.
+    const details = await result.json().catch(() => null);
+    if (details?.security?.employee_auth_configured !== true) return Response.json({ detail: "Employee keys are not configured on the security service" }, { status: 503 });
     const token = seal(key);
     (await cookies()).set(cookieName, token, { httpOnly: true, sameSite: "strict", secure: process.env.COOKIE_SECURE !== "false" && process.env.NODE_ENV === "production", path: "/", maxAge: 8 * 3600 });
     return Response.json({ authenticated: true });

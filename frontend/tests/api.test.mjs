@@ -55,3 +55,11 @@ test('explicit configuration takes precedence over hosting defaults', () => {
   assert.equal(app.sameOrigin(new Request('http://localhost/api/session', { headers: { Origin: 'https://aegis.example' } })), true);
   assert.equal(app.sameOrigin(new Request('http://localhost/api/session', { headers: { Origin: 'https://aegis-example.onrender.com' } })), false);
 });
+test('session refuses sign-in when the backend has no employee keys configured', async () => {
+  let cookieSet = false;
+  const routes = load('app/api/session/route.ts', { '@/lib/server': server(), 'next/headers': { cookies: async () => ({ set: () => { cookieSet = true; } }) } },
+    { fetch: async () => Response.json({ status: 'ok', security: { employee_auth_configured: false } }) });
+  const response = await routes.POST(new Request('http://localhost/api/session', { method: 'POST', headers: { Origin: 'http://localhost' }, body: JSON.stringify({ key: 'any-string-that-is-24-chars-long' }) }));
+  assert.equal(response.status, 503);
+  assert.equal(cookieSet, false);
+});
