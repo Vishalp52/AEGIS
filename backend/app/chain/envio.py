@@ -21,7 +21,7 @@ from app.chain.types import ChainTx, WalletActivity, chain_quantity
 
 log = logging.getLogger("aegis.chain.envio")
 
-TX_FIELDS = ["block_number", "hash", "from", "to", "value", "input"]
+TX_FIELDS = ["block_number", "hash", "from", "to", "value", "sighash"]
 BLOCK_FIELDS = ["number", "timestamp", "hash"]
 MAX_PAGES = 20
 
@@ -130,7 +130,7 @@ class EnvioHyperSync:
                 if not from_block <= bn < to_block or bn not in ts:
                     raise ValueError("HyperSync transaction has no valid block timestamp")
                 to = t.get("to")
-                inp = t.get("input") or "0x"
+                inp = t.get("sighash", t.get("input")) or "0x"
                 sender = str(t["from"]).lower()
                 recipient = str(to).lower() if to else None
                 if not t.get("hash") or not sender or wallet not in (sender, recipient):

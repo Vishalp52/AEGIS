@@ -1,6 +1,6 @@
 # Envio, Alchemy and Dynamic
 
-These integrations are implemented but are not yet live-verified. Do not claim bounty eligibility from installed packages, mocked tests or simulated replay alone. The deployed site is https://aegis-web-8nd8.onrender.com and the repository is https://github.com/Vishalp52/AEGIS.
+The Envio and Alchemy combined pipeline passed a local live Monad Testnet check on October 13, 2026. Dynamic account configuration is complete; hosted wallet signing remains to be verified. Do not claim bounty eligibility from installed packages, mocked tests or simulated replay alone. The deployed site is https://aegis-web-8nd8.onrender.com and the repository is https://github.com/Vishalp52/AEGIS.
 
 ## Account setup
 
@@ -49,3 +49,11 @@ The main submission still needs its demo and pitch videos. Do not describe the p
 ## Dependency review
 
 The Dynamic SDK is pinned to 5.10.0. Axios and sharp are overridden to patched releases. The dependency audit still reports upstream advisories, including bigint-buffer, uuid, braces and stream-json, and a Dynamic Base Account connector peer-version warning. Do not treat a successful build as a security audit or market this deployment as production-ready. Review upstream fixes and the deployed bundle before enterprise rollout. npm/package-lock.json is the supported dependency workflow; the obsolete pnpm lockfile was removed.
+
+## Live provider check — October 13, 2026
+
+The check used public wallet `0x4edf4af8fbd55409ddeb326b91248896554fce0f`: HyperSync returned three transactions in a complete 24-hour window; Alchemy confirmed chain 10143, the indexed block hash and wallet nonce 2. The combined pipeline reported source `envio`, normal history confidence and derived behavioral features. All 237 backend tests passed. This is local provider evidence, not yet a hosted wallet-signing demonstration.
+
+Queries request compact function selectors instead of full transaction calldata. Retrieval remains bounded to 20 pages; extremely active wallets can exceed that limit and use the explicitly partial RPC fallback.
+
+Dynamic uses the AEGIS Sandbox environment with Monad Testnet enabled and the hosted AEGIS origin allowed. No paid Dynamic plan or gas sponsorship was enabled.

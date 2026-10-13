@@ -241,3 +241,14 @@ def test_source_falls_back_when_indexed_history_is_stale(monkeypatch):
     assert source.get_wallet_activity(W).source == "rpc"
     monkeypatch.setattr(monad_rpc, "safe_wallet_activity", lambda wallet: None)
     assert source.get_wallet_activity(W).source == "none"
+
+
+def test_envio_compact_selector_preserves_contract_call_detection(monkeypatch):
+    client = EnvioHyperSync(url="https://unused")
+    transaction = raw_tx(1, sighash="0x12345678")
+    transaction.pop("input")
+    monkeypatch.setattr(client, "query", lambda body: page(2, [transaction], [{"number": 1, "timestamp": 100}]))
+    assert client.wallet_transactions(W, 0, 2)[0].is_contract_call
+    transaction["sighash"] = None
+    assert not client.wallet_transactions(W, 0, 2)[0].is_contract_call
+    assert "input" not in envio.TX_FIELDS
