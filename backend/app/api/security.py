@@ -1,4 +1,4 @@
-"""Security controls for the POTUS API.
+"""Security controls for the AEGIS API.
 
 * Employee / admin API keys (constant-time compare; reviewer identity comes from the key)
 * Wallet-ownership proof: one-time, expiring sign-in nonces (EIP-191 personal_sign)
@@ -30,9 +30,9 @@ from starlette.responses import JSONResponse
 
 from app.api.settings import settings
 
-log = logging.getLogger("potus.security")
+log = logging.getLogger("aegis.security")
 
-# Fresh random secret per process if none configured (tokens then expire on restart - fail safe)
+
 _TOKEN_SECRET = (settings.token_secret or secrets.token_hex(32)).encode()
 
 
@@ -54,7 +54,7 @@ def ip_fingerprint(request: Request) -> str:
 @dataclass(frozen=True)
 class Principal:
     name: str
-    role: str  # "employee" | "admin"
+    role: str
 
 
 def _parse_keys(raw: str) -> dict[str, str]:
@@ -68,7 +68,7 @@ def _parse_keys(raw: str) -> dict[str, str]:
 
 def _match(provided: str, keys: dict[str, str]) -> Optional[str]:
     found = None
-    for key, name in keys.items():  # compare against all keys: no early exit timing signal
+    for key, name in keys.items():
         if hmac.compare_digest(provided.encode(), key.encode()):
             found = name
     return found
@@ -92,7 +92,7 @@ def require_employee(request: Request, x_api_key: Optional[str] = Header(None)) 
     if p:
         return p
     if not _auth_configured() and not settings.production:
-        return Principal("dev-unauthenticated", "employee")  # local dev only; logged at startup
+        return Principal("dev-unauthenticated", "employee")
     log.warning("employee auth failed from %s on %s", ip_fingerprint(request), request.url.path)
     raise HTTPException(401, "missing or invalid API key", headers={"WWW-Authenticate": "ApiKey"})
 
@@ -128,7 +128,7 @@ class RateLimiter:
             if len(q) >= limit:
                 return max(1, int(window - (now - q[0])) + 1)
             q.append(now)
-            if len(self._hits) > 50_000:  # bound memory under key-spraying
+            if len(self._hits) > 50_000:
                 for k in list(self._hits)[:10_000]:
                     if not self._hits[k]:
                         del self._hits[k]
@@ -141,7 +141,7 @@ class RateLimiter:
 
 limiter = RateLimiter()
 
-# per-minute budgets, scaled from RATE_LIMIT_PER_MINUTE (default 30)
+
 def _budget(kind: str) -> int:
     base = settings.rate_limit_per_minute
     return {"access": base, "score": base * 2, "verify": max(5, base // 3), "nonce": base, "read": base * 4}[kind]
@@ -179,7 +179,7 @@ class NonceStore:
         nonce = secrets.token_urlsafe(16)
         now = time.time()
         exp = now + settings.nonce_ttl_seconds
-        msg = (f"POTUS wants you to prove ownership of this wallet.\n"
+        msg = (f"AEGIS wants you to prove ownership of this wallet.\n"
                f"Purpose: {purpose}\nWallet: {wallet.lower()}\nNonce: {nonce}\n"
                f"Issued At: {int(now)}\nExpires At: {int(exp)}\n"
                "Signing is free and does not send a transaction.")
@@ -272,7 +272,7 @@ def _num(v: Any, lo: float = -1e6, hi: float = 1e6) -> float:
         f = float(v)
     except (TypeError, ValueError):
         return 0.0
-    if f != f:  # NaN
+    if f != f:
         return 0.0
     return round(max(lo, min(hi, f)), 4)
 
@@ -344,7 +344,7 @@ class BodySizeLimitMiddleware(BaseHTTPMiddleware):
             except ValueError:
                 return JSONResponse({"detail": "invalid content-length"}, status_code=400)
         elif request.method in ("POST", "PUT", "PATCH"):
-            body = await request.body()  # chunked: enforce on actual size
+            body = await request.body()
             if len(body) > settings.max_body_bytes:
                 return JSONResponse({"detail": "request body too large"}, status_code=413)
         return await call_next(request)

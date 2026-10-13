@@ -1,6 +1,6 @@
 {
   "mode": "live",
-  "prompt_version": "potus-triage-v4",
+  "prompt_version": "aegis-triage-v4",
   "evaluated_at": "2026-10-08T01:14:58.705720+00:00",
   "model": "gemini-3.5-flash-lite",
   "api": "generate_content",

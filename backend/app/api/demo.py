@@ -4,10 +4,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from app.api.security import Principal, require_admin, require_demo_enabled, reset_security_state
-from app.api.state import db_audit, db_clear_incidents, store
+from app.api.state import db_audit, db_clear_incidents, db_clear_cases, store
 from app.chain.demo_replay import SCENARIOS
 
-# Disabled entirely in production unless ENABLE_DEMO=true; reset needs the admin key.
+
 router = APIRouter(prefix="/demo", tags=["demo"], dependencies=[Depends(require_demo_enabled)])
 
 
@@ -26,5 +26,6 @@ def reset(who: Principal = Depends(require_admin)):
     store.reset()
     reset_security_state()
     db_clear_incidents()
+    db_clear_cases()
     db_audit(who.name, "DEMO_RESET", "all", {})
     return {"status": "reset", "cases": 0, "incidents": 0}

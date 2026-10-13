@@ -16,13 +16,13 @@ from app.chain.types import ChainTx, WalletActivity
 
 WEI = 10 ** 18
 
-# Familiar contracts every "normal" history interacts with
+
 FAMILIAR = [
     "0x00000000000000000000000000000000c0ffee01",
     "0x00000000000000000000000000000000c0ffee02",
     "0x00000000000000000000000000000000c0ffee03",
 ]
-# Simulated "previously flagged" counterparties (seeded into the flagged set on reset)
+
 FLAGGED_COUNTERPARTIES = [
     "0x000000000000000000000000000000000bad0001",
     "0x000000000000000000000000000000000bad0002",
@@ -94,7 +94,7 @@ def _normal_history(rng, wallet, now, latest, n=36, start=3 * 3600, end=24 * 360
 def build_activity(scenario: Scenario, wallet: str, now: Optional[float] = None, latest_block: int = 10_000_000) -> WalletActivity:
     now = now or time.time()
     wallet = wallet.lower()
-    rng = random.Random(f"potus-demo-{scenario.key}")
+    rng = random.Random(f"aegis-demo-{scenario.key}")
     txs: list[ChainTx] = []
     k = scenario.key
 
@@ -103,10 +103,10 @@ def build_activity(scenario: Scenario, wallet: str, now: Optional[float] = None,
         txs.append(_mk(rng, wallet, now - 25 * 60, FAMILIAR[0], 1.1, latest=latest_block, now=now))
         txs.append(_mk(rng, wallet, now - 4 * 60, FAMILIAR[1], 0.9, latest=latest_block, now=now))
     elif k == "B":
-        # active long ago, quiet for ~20h, then a short ordinary burst
+
         txs += _normal_history(rng, wallet, now, latest_block, n=12, start=20 * 3600, end=24 * 3600)
         for i in range(8):
-            value = 2.3 if i == 0 else max(0.05, rng.gauss(1.0, 0.2))   # slightly larger, not an outlier
+            value = 2.3 if i == 0 else max(0.05, rng.gauss(1.0, 0.2))
             txs.append(_mk(rng, wallet, now - 30 - i * 65, FAMILIAR[i % 3], value, latest=latest_block, now=now))
     elif k in ("C", "E", "F"):
         txs += _normal_history(rng, wallet, now, latest_block, n=36)
@@ -115,7 +115,7 @@ def build_activity(scenario: Scenario, wallet: str, now: Optional[float] = None,
         for i in range(burst):
             txs.append(_mk(rng, wallet, now - 15 - i * (540 / burst), new_contracts[i % len(new_contracts)],
                            max(0.05, rng.gauss(1.0, 0.3)), latest=latest_block, now=now))
-        if k != "E":  # E: same takeover shape but no value outlier -> needs threat memory to escalate
+        if k != "E":
             big = {"C": 60.0, "F": 45.0}[k]
             txs.append(_mk(rng, wallet, now - 90, _addr(rng, "beef"), big, call=False, latest=latest_block, now=now))
     elif k == "D":

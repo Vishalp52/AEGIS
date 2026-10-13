@@ -6,19 +6,19 @@ from pathlib import Path
 BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
-# Deterministic, offline test configuration
+
 os.environ["GEMINI_MODE"] = "mock"
 os.environ["DATA_SOURCE"] = "none"
-_test_dir = tempfile.TemporaryDirectory(prefix="potus-tests-")
-os.environ["DATABASE_URL"] = "sqlite:///" + str(Path(_test_dir.name) / "potus.db")
+_test_dir = tempfile.TemporaryDirectory(prefix="aegis-tests-")
+os.environ["DATABASE_URL"] = "sqlite:///" + str(Path(_test_dir.name) / "aegis.db")
 os.environ["MODEL_PATH"] = str(Path(_test_dir.name) / "isolation_forest.joblib")
 os.environ["ENABLE_DEMO"] = "true"
 os.environ["REQUIRE_WALLET_SIGNATURE"] = "false"
-os.environ["POTUS_REGISTRY_ADDRESS"] = ""
+os.environ["AEGIS_REGISTRY_ADDRESS"] = ""
 os.environ["ENVIO_HYPERSYNC_URL"] = ""
 os.environ["APP_ENV"] = "development"
-os.environ["POTUS_ADMIN_KEY"] = ADMIN_KEY = "test-admin-key-0123456789abcdef"
-os.environ["POTUS_EMPLOYEE_KEYS"] = "alice:" + (EMPLOYEE_KEY := "test-employee-key-0123456789abc")
+os.environ["AEGIS_ADMIN_KEY"] = ADMIN_KEY = "test-admin-key-0123456789abcdef"
+os.environ["AEGIS_EMPLOYEE_KEYS"] = "alice:" + (EMPLOYEE_KEY := "test-employee-key-0123456789abc")
 os.environ["TOKEN_SECRET"] = "test-token-secret-0123456789abcdef0123456789"
 os.environ["RATE_LIMIT_PER_MINUTE"] = "1000"
 

@@ -1,4 +1,4 @@
-"""POTUS backend entrypoint.
+"""AEGIS backend entrypoint.
 
 Run from the backend/ folder:
     uvicorn main:app --reload --port 8000
@@ -23,17 +23,17 @@ from app.api.security import (
     BodySizeLimitMiddleware, Principal, SecurityHeadersMiddleware, require_employee,
 )
 from app.api.settings import settings
-from app.api.state import init_db, load_incidents_into_memory
+from app.api.state import init_db, load_incidents_into_memory, load_cases_into_memory
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-log = logging.getLogger("potus")
+log = logging.getLogger("aegis")
 
 
 def check_security_posture() -> None:
     """Fail closed in production; warn loudly in development."""
     problems = []
     if not (settings.admin_key or settings.employee_keys):
-        problems.append("no POTUS_ADMIN_KEY / POTUS_EMPLOYEE_KEYS: employee routes are unauthenticated")
+        problems.append("no AEGIS_ADMIN_KEY / AEGIS_EMPLOYEE_KEYS: employee routes are unauthenticated")
     if not settings.token_secret:
         problems.append("no TOKEN_SECRET: vault tokens use a per-process random key")
     if "*" in settings.cors_origins:
@@ -52,9 +52,10 @@ def check_security_posture() -> None:
 async def lifespan(_: FastAPI):
     check_security_posture()
     init_db()
-    c = components()  # loads risk config + trains/loads IsolationForest
+    c = components()
     n = load_incidents_into_memory()
-    log.info("POTUS ready: env=%s, model=%s, incidents=%d, gemini_mode=%s, registry=%s, wallet_sig_required=%s, demo=%s",
+    load_cases_into_memory()
+    log.info("AEGIS ready: env=%s, model=%s, incidents=%d, gemini_mode=%s, registry=%s, wallet_sig_required=%s, demo=%s",
              settings.app_env, c.detector.trained_on, n, settings.gemini_mode,
              "on" if c.registry.enabled else "off", settings.require_wallet_signature, settings.demo_enabled)
     try:
@@ -65,7 +66,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="POTUS API",
+    title="AEGIS API",
     version="2.1.0",
     description="Adaptive behavioral threat intelligence and access control for Monad.",
     lifespan=lifespan,
@@ -74,7 +75,7 @@ app = FastAPI(
     openapi_url=None if settings.production else "/openapi.json",
 )
 
-# Order: outermost first
+
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(BodySizeLimitMiddleware)
 app.add_middleware(
@@ -103,7 +104,7 @@ async def http_error(_: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(_: Request, exc: RequestValidationError):
-    # Field names + messages only; never echo the submitted values back
+
     errors = [{"loc": [str(x) for x in e.get("loc", [])], "msg": e.get("msg", "invalid")} for e in exc.errors()]
     return JSONResponse({"detail": "invalid request", "errors": errors}, status_code=422)
 
@@ -111,7 +112,7 @@ async def validation_error(_: Request, exc: RequestValidationError):
 @app.exception_handler(Exception)
 async def unhandled_error(_: Request, exc: Exception):
     log.exception("unhandled error: %s", type(exc).__name__)
-    return JSONResponse({"detail": "internal error"}, status_code=500)  # no stack traces to clients
+    return JSONResponse({"detail": "internal error"}, status_code=500)
 
 
 # ------------------------------------------------------------------ health

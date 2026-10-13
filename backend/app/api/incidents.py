@@ -12,7 +12,7 @@ from app.api import teammate as tm
 from app.api.engine import _iso
 from app.api.schemas import IncidentConfirmRequest
 from app.api.security import Principal, require_employee
-from app.api.state import db_audit, db_save_incident, store
+from app.api.state import db_audit, db_save_incident, store, persist_cases
 from app.features.schemas import VECTOR_VERSION
 
 router = APIRouter(tags=["incidents"], dependencies=[Depends(require_employee)])
@@ -53,12 +53,13 @@ def _remember_incident(case: dict, disposition: str, reviewer: str) -> dict:
                                        disposition=disposition, evidence_hash=evidence_hash)
     store.incident_meta[incident_id] = meta
     store.flagged_wallets.add(case["wallet"])
-    for other in store.cases.values():  # confirmed incident revokes the wallet's vault grants
+    for other in store.cases.values():
         if other["wallet"] == case["wallet"]:
             other["revoked"] = True
     h = db_audit(reviewer, "INCIDENT_CONFIRMED", incident_id, {"case": case["case_id"], "disposition": disposition})
     case["audit"].append({"actor": reviewer, "event": "INCIDENT_CONFIRMED", "at": _iso(time.time()), "payload_hash": h})
     case["incident_id"] = incident_id
+    persist_cases()
     return {"incident_id": incident_id, "disposition": disposition, "category": category, "case_id": case["case_id"]}
 
 

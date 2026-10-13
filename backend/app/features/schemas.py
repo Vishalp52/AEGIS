@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Order matters: this is the vector fed to IsolationForest and threat memory.
+
 MODEL_FEATURES: list[str] = [
     "tx_count_10m",
     "tx_count_1h",
@@ -25,7 +25,7 @@ RESOURCE_SENSITIVITY: dict[str, float] = {
     "public-profile": 0.2,
 }
 DEFAULT_SENSITIVITY = 0.5
-# Keep caller-provided counts within the detector's supported numeric range.
+
 MAX_FEATURE_COUNT = 2**31 - 1
 
 
@@ -41,9 +41,9 @@ class BehaviorFeatures(BaseModel):
     access_requests_10m: int = Field(0, ge=0, le=MAX_FEATURE_COUNT)
     failed_access_count: int = Field(0, ge=0, le=MAX_FEATURE_COUNT)
     flagged_counterparty_count: int = Field(0, ge=0, le=MAX_FEATURE_COUNT)
-    pattern_similarity: float = Field(0.0, ge=0.0, le=1.0)  # filled after threat-memory lookup
+    pattern_similarity: float = Field(0.0, ge=0.0, le=1.0)
     resource_sensitivity: float = Field(DEFAULT_SENSITIVITY, ge=0.0, le=1.0)
-    session_geo_velocity: Optional[float] = Field(None, ge=0.0)  # optional; never fabricated
+    session_geo_velocity: Optional[float] = Field(None, ge=0.0)
 
     def model_vector(self) -> list[float]:
         return [float(getattr(self, f)) for f in MODEL_FEATURES]
@@ -65,10 +65,10 @@ class FeatureBundle(BaseModel):
     hard_flags: list[str]
     data_source: str
     simulated: bool = False
-    history_confidence: str = "normal"       # "normal" | "low" (cold start / partial window)
+    history_confidence: str = "normal"
     notes: list[str] = Field(default_factory=list)
-    vector: list[float] = Field(default_factory=list)          # raw model vector
-    signature: list[float] = Field(default_factory=list)       # standardized deviation signature (threat memory)
+    vector: list[float] = Field(default_factory=list)
+    signature: list[float] = Field(default_factory=list)
 
     def evidence_packet(self, anomaly_score: float) -> dict[str, Any]:
         """Bounded, structured evidence for rules + Gemini (spec §5 example packet).

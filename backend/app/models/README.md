@@ -1,4 +1,4 @@
-# POTUS ML model
+# AEGIS ML model
 
 The ML layer is the statistical anomaly detector used by the evaluation engine.
 
@@ -32,7 +32,7 @@ The training source is recorded in the model metadata.
 
 ## Calibration
 
-scikit-learn's `decision_function` is lower for more abnormal observations. POTUS
+scikit-learn's `decision_function` is lower for more abnormal observations. AEGIS
 flips that sign and calibrates it against the normal training population into a
 bounded `0.0..1.0` anomaly score, where higher means more anomalous.
 

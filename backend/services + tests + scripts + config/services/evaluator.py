@@ -18,7 +18,7 @@ class EvaluatorService:
     async def evaluate_request(self, evidence: dict, anomaly_score: float, vector: list[float]):
         rule_score, rule_reasons = self.rules.evaluate(evidence)
         pattern_similarity, _ = self.threat_store.find_max_similarity(vector)
-        
+
         evidence = {**evidence, "anomaly_score": anomaly_score, "pattern_similarity": pattern_similarity}
         gemini_triage = None
         if anomaly_score >= settings.gemini_trigger_score and settings.gemini_mode != "off":

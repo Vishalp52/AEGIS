@@ -19,12 +19,12 @@ import httpx
 from app.api.settings import settings
 from app.chain.types import ChainTx, WalletActivity, chain_quantity
 
-log = logging.getLogger("potus.chain.envio")
+log = logging.getLogger("aegis.chain.envio")
 
 TX_FIELDS = ["block_number", "hash", "from", "to", "value", "input"]
 BLOCK_FIELDS = ["number", "timestamp"]
 MAX_PAGES = 20
-# An index that is more than a minute behind cannot describe current activity.
+
 MAX_INDEX_LAG_SECONDS = 60
 
 
@@ -63,7 +63,7 @@ class EnvioHyperSync:
         txs: list[dict] = []
         ts: dict[int, int] = {}
         data = resp["data"]
-        # Current servers return an object; older JSON servers return chunks.
+
         chunks = [data] if isinstance(data, dict) else data
         if not isinstance(chunks, list):
             raise ValueError("Invalid HyperSync response data")
@@ -170,8 +170,8 @@ class EnvioHyperSync:
             raise ValueError("HyperSync head timestamp is in the future")
         span = max(1, math.ceil(window_seconds / max(settings.monad_block_time_seconds, 0.05)))
         start = max(0, latest - span)
-        # Block time is an estimate, not evidence of 24h coverage. Expand until
-        # an actual block predates the cutoff (or the scan reaches genesis).
+
+
         while start > 0 and self.block_timestamp(start) >= cutoff:
             span *= 2
             start = max(0, latest - span)

@@ -12,7 +12,7 @@ from app.api.incidents import STORABLE, remember_incident
 from app.api.messages import customer_payload
 from app.api.schemas import ReviewRequest
 from app.api.security import Principal, require_employee
-from app.api.state import db_audit, store
+from app.api.state import db_audit, store, persist_cases
 from app.features.baselines import PopulationStats
 from app.features.schemas import MODEL_FEATURES
 
@@ -150,6 +150,24 @@ def review_case(case_id: str, req: ReviewRequest, who: Principal = Depends(requi
         return _review_case(case_id, req, who)
 
 
+@router.post('/cases/{case_id}/registry')
+def refresh_registry(case_id: str):
+    case = store.cases.get(case_id)
+    if not case:
+        raise HTTPException(404, 'unknown case')
+    record = case['response']['onchain']
+    if not record.get('tx_hash'):
+        return record
+    try:
+        result = components().registry.receipt(record['tx_hash'])
+    except Exception as exc:
+        raise HTTPException(503, 'registry receipt is not available') from exc
+    with store.lock:
+        record.update(result)
+        persist_cases()
+    return record
+
+
 def _review_case(case_id: str, req: ReviewRequest, who: Principal):
     case = store.cases.get(case_id)
     if not case:
@@ -166,4 +184,5 @@ def _review_case(case_id: str, req: ReviewRequest, who: Principal):
     case["reviews"].append(review)
     h = db_audit(who.name, "CASE_REVIEWED", case_id, review)
     case["audit"].append({"actor": who.name, "event": "CASE_REVIEWED", "at": _iso(now), "payload_hash": h})
+    persist_cases()
     return {"case_id": case_id, "status": case["status"], "review": review, "incident": incident}

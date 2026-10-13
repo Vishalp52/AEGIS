@@ -17,7 +17,7 @@ from web3 import Web3
 from app.api.settings import settings
 from app.chain.types import ChainTx, WalletActivity, chain_quantity
 
-log = logging.getLogger("potus.chain.rpc")
+log = logging.getLogger("aegis.chain.rpc")
 
 def _hex(v) -> str:
     if v is None:
@@ -65,8 +65,8 @@ class MonadRPC:
 
     # ---- block scanning ---------------------------------------------
     def _fetch_block(self, number: int) -> tuple[int, list[ChainTx]]:
-        # Read the canonical block on every scan. A cache keyed only by number
-        # can leak data between endpoints and retain blocks replaced by a reorg.
+
+
         block = self.w3.eth.get_block(number, full_transactions=True)
         ts = chain_quantity(block["timestamp"])
         txs: list[ChainTx] = []
@@ -102,7 +102,7 @@ class MonadRPC:
     def _safe_fetch(self, n: int):
         try:
             return self._fetch_block(n)
-        except Exception as exc:  # one bad block shouldn't kill the scan
+        except Exception as exc:
             log.debug("block %s fetch failed: %s", n, exc)
             return None
 
@@ -134,8 +134,8 @@ class MonadRPC:
         missing = min(scan_blocks, latest + 1) - len(blocks)
         if missing:
             act.notes.append(f"RPC failed to retrieve {missing} requested blocks; activity is incomplete")
-        # A zero nonce proves no outgoing transactions, not when an address was
-        # first funded. Keep wallet age unknown on this bounded, unindexed path.
+
+
         return act
 
 

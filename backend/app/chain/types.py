@@ -19,11 +19,11 @@ def chain_quantity(value) -> int:
 class ChainTx:
     hash: str
     block_number: int
-    timestamp: int            # unix seconds
-    from_addr: str            # lowercase 0x...
-    to_addr: Optional[str]    # lowercase 0x... (None for contract creation)
+    timestamp: int
+    from_addr: str
+    to_addr: Optional[str]
     value_wei: int
-    is_contract_call: bool    # tx carried calldata
+    is_contract_call: bool
 
     def __post_init__(self):
         object.__setattr__(self, "from_addr", self.from_addr.lower())
@@ -34,15 +34,15 @@ class ChainTx:
 @dataclass
 class WalletActivity:
     wallet: str
-    source: str                                  # "envio" | "rpc" | "demo" | "none"
+    source: str
     txs: list[ChainTx] = field(default_factory=list)
     latest_block: int = 0
-    first_seen_block: Optional[int] = None       # earliest known activity (wallet age)
-    nonce: Optional[int] = None                  # outgoing tx count (RPC)
-    window_seconds: int = 24 * 3600              # how much history `txs` covers
-    complete_window: bool = True                 # False when only a partial window was scanned
+    first_seen_block: Optional[int] = None
+    nonce: Optional[int] = None
+    window_seconds: int = 24 * 3600
+    complete_window: bool = True
     notes: list[str] = field(default_factory=list)
-    simulated: bool = False                      # True for labeled demo/replay data
+    simulated: bool = False
 
     def __post_init__(self):
         self.wallet = self.wallet.lower()

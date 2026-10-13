@@ -129,8 +129,8 @@ def test_envio_uses_timestamps_to_expand_window_and_filters_bounds(monkeypatch):
     client = EnvioHyperSync(url="https://unused")
     monkeypatch.setattr(envio, "settings", replace(envio.settings, monad_block_time_seconds=1.0))
     monkeypatch.setattr(client, "height", lambda: 1000)
-    # Actual blocks are twice as fast as configured. A count-only estimate
-    # would omit the oldest half of the requested ten-minute history.
+
+
     monkeypatch.setattr(client, "block_timestamp", lambda number: 1000 + number / 2)
     calls = []
     transactions = [ChainTx(str(ts), 100, ts, W, OTHER, 1, False)
@@ -143,7 +143,7 @@ def test_envio_uses_timestamps_to_expand_window_and_filters_bounds(monkeypatch):
     monkeypatch.setattr(client, "wallet_transactions", wallet_transactions)
     monkeypatch.setattr(client, "first_seen_block", lambda *args: 5)
     activity = client.wallet_activity(W, window_seconds=300, now=1500)
-    assert calls == [(0, 1001)]  # 700 and 400 do not predate the cutoff
+    assert calls == [(0, 1001)]
     assert [tx.timestamp for tx in activity.txs] == [1200, 1499]
     assert activity.complete_window and activity.window_seconds == 300
 
@@ -201,7 +201,7 @@ def test_rpc_quantities_and_repeated_reads_do_not_reuse_stale_blocks(monkeypatch
     assert first.txs[0].value_wei == 10**18 + 1
     blocks[1] = {"timestamp": "0x65", "transactions": []}
     assert rpc.wallet_activity(W, scan_blocks=1).txs == []
-    # Another provider at the same height must never share the first result.
+
     other = fake_rpc(monkeypatch, blocks, url="https://another-provider")
     assert other.wallet_activity(W, scan_blocks=1).txs == []
 

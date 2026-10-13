@@ -1,4 +1,4 @@
-"""Strict, bounded classification contract (POTUS specification section 6)."""
+"""Strict, bounded classification contract (AEGIS specification section 6)."""
 from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -20,7 +20,7 @@ class GeminiTriage(BaseModel):
     @field_validator("category", mode="before")
     @classmethod
     def legacy_labels(cls, value):
-        # Read older persisted records while emitting the canonical spec labels.
+
         return {"NORMAL OR BENIGN": "NORMAL_OR_BENIGN", "SLIGHT ANOMALY": "SLIGHT_ANOMALY"}.get(value, value) if isinstance(value, str) else value
 
 

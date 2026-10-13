@@ -33,7 +33,7 @@ def test_raw_novelty_ratio_uses_fractional_baseline():
     delta = b.feature_deltas['new_contract_ratio']
     assert delta['ratio'] == round(.8 / delta['baseline'], 2)
     assert delta['ratio'] > .8
-    assert 'NEW_CONTRACT_SPIKE' not in b.hard_flags  # no 1h contract count provided
+    assert 'NEW_CONTRACT_SPIKE' not in b.hard_flags
 
 
 def test_access_flood_counts_once_even_with_chain_burst():

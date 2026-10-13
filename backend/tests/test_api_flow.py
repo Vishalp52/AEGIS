@@ -48,7 +48,7 @@ def test_threat_memory_raises_recurrence(client, scenarios):
     c = req(client, scenarios["C"]["wallet"])
     out = client.post(f"/cases/{c['request_id']}/review", json={"disposition": "CONFIRMED_INCIDENT"}).json()
     assert out["incident"]["incident_id"]
-    client.post("/demo/reset")  # clear access history but threat memory is also cleared -> re-confirm
+    client.post("/demo/reset")
     c = req(client, scenarios["C"]["wallet"])
     client.post("/incident/confirm", json={"case_id": c["request_id"]})
     after = req(client, scenarios["E"]["wallet"])
@@ -63,7 +63,7 @@ def test_threat_memory_poisoning_blocked(client, scenarios):
     assert client.get("/incidents").json()["count"] == 0
     a = req(client, scenarios["A"]["wallet"])
     r = client.post("/incident/confirm", json={"case_id": a["request_id"]})
-    assert r.status_code == 409  # normal behavior has no abnormal signature to store
+    assert r.status_code == 409
 
 
 def test_customer_payload_has_no_leakage(client, scenarios):
@@ -103,12 +103,12 @@ def test_challenge_signature_flow(client):
     ch = client.get(f"/access/{r['request_id']}/challenge").json()
     bad = sign(Account.create(), ch["message"])
     assert client.post(f"/access/{r['request_id']}/verify", json={"nonce": ch["nonce"], "signature": bad}).status_code == 401
-    # nonce was consumed by the failed attempt -> must fetch a fresh challenge
+
     ch = client.get(f"/access/{r['request_id']}/challenge").json()
     good = {"nonce": ch["nonce"], "signature": sign(acct, ch["message"])}
     v = client.post(f"/access/{r['request_id']}/verify", json=good)
     assert v.status_code == 200 and v.json()["decision"] == "RESOLVED"
-    assert client.post(f"/access/{r['request_id']}/verify", json=good).status_code == 409  # no replay
+    assert client.post(f"/access/{r['request_id']}/verify", json=good).status_code == 409
     vault = client.get("/vault/research-vault", headers=bearer(v.json()["access_token"]))
     assert vault.status_code == 200
 
@@ -120,7 +120,7 @@ def test_employee_case_packet(client, scenarios):
         assert k in p
     assert p["summary_card"].startswith(f"CASE {c['request_id']}")
     zs = [abs(d["population_z"]) for d in p["behavior_deltas"]]
-    assert zs == sorted(zs, reverse=True)  # strongest deviations first
+    assert zs == sorted(zs, reverse=True)
     assert client.get("/cases").json()["cases"][0]["case_id"] == c["request_id"]
 
 

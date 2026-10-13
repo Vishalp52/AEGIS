@@ -1,148 +1,29 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_POTUS_API_URL?.replace(/\/$/, "") ??
-  "http://127.0.0.1:8000";
-
 export type DemoScenario = "A" | "B" | "C" | "D" | "E" | "F";
-
-export type AccessRequest = {
-  wallet: string;
-  resource_id?: string;
-  action?: string;
-  session?: Record<string, string>;
-  demo_scenario?: DemoScenario;
-  simulate_ai_outage?: boolean;
+export type Decision = "ALLOW" | "CHALLENGE" | "REVIEW" | "RESTRICT" | "RESOLVED";
+export type Customer = { request_id: string; decision: Decision; status: string; title: string; message: string; next_action: string; support_code: string };
+export type Evaluation = { request_id: string; wallet: string; decision: Decision; customer: Customer; access_token: string | null; simulated: boolean };
+export type Scenario = { key: DemoScenario; name: string; wallet: string; description: string; expected: string; simulated: boolean };
+export type CaseRow = { case_id: string; wallet: string; created_at: string; decision: Decision; risk_score: number; status: string; scenario: string | null };
+export type Triage = { category: string; confidence: number; semantic_risk: number; supporting_indicators: string[]; benign_explanations: string[]; employee_summary: string; requires_human_review: boolean };
+export type CasePacket = {
+  case_header: CaseRow & { simulated: boolean; ttl_seconds: number; resource_id: string; timestamp: string };
+  summary_card: string;
+  risk_summary: { risk_score: number; severity: string; components: Record<string, { value_100: number; weight: number; points: number }> };
+  behavior_deltas: { feature: string; value: number; baseline: number; ratio: number | null; population_z: number }[];
+  hard_flags: string[]; gemini_triage: Triage | null; gemini_status: string;
+  threat_memory: { closest_incident: string | null; similarity: number; simulated: boolean | null };
+  policy_trace: { reason_codes: string[]; guardrails: string[]; thresholds: Record<string, number>; weights: Record<string, number> };
+  timeline: { data_source: string; notes: string[]; recent_transactions: Record<string, unknown>[]; access_attempts: { at: string; decision: string }[] };
+  evidence: { evidence_hash: string; onchain: { status?: string; tx_hash?: string; explorer_url?: string; error?: string } };
+  audit: { reviews: { reviewer: string; disposition: string; note: string; at: string }[]; events: { actor: string; event: string; at: string }[] };
+  customer_view: Customer; actions: string[];
 };
 
-export type CustomerPayload = {
-  request_id: string;
-  decision: string;
-  status: string;
-  title: string;
-  message: string;
-  next_action: string;
-  support_code: string;
-};
-
-export type Signals = {
-  anomaly_score: number;
-  rule_score: number;
-  pattern_similarity: number;
-  gemini: {
-    category: string;
-    confidence: number;
-    semantic_risk: number;
-  } | null;
-  gemini_status: string;
-};
-
-export type AccessEvaluation = {
-  request_id: string;
-  wallet: string;
-  resource_id: string;
-  action: string;
-  risk_score: number;
-  decision: "ALLOW" | "CHALLENGE" | "REVIEW" | "RESTRICT";
-  expires_at: string;
-  signals: Signals;
-  reason_codes: string[];
-  customer: CustomerPayload;
-  evidence_hash: string;
-  onchain: Record<string, unknown>;
-  simulated: boolean;
-  wallet_verified: boolean;
-  access_token: string | null;
-};
-
-export type WalletNonce = {
-  wallet: string;
-  nonce: string;
-  message: string;
-  expires_at: string;
-};
-
-export type AccessChallenge = {
-  request_id: string;
-  nonce: string;
-  message: string;
-  expires_at: string;
-};
-
-export type ChallengeVerification = {
-  nonce: string;
-  signature: string;
-};
-
-async function apiRequest<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...init.headers,
-      },
-      cache: "no-store",
-    });
-  } catch {
-    throw new Error(
-      `Cannot reach the POTUS API at ${API_URL}. Check that the backend is running and allows requests from this frontend.`,
-    );
-  }
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const detail = body?.detail;
-
-    throw new Error(
-      typeof detail === "string"
-        ? detail
-        : `POTUS API request failed (${response.status})`,
-    );
-  }
-
-  return (await response.json()) as T;
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...init.headers }, cache: "no-store" });
+  const body = await response.json();
+  if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : `Request failed (${response.status})`);
+  return body as T;
 }
-
-export function requestAccess(
-  request: AccessRequest,
-): Promise<AccessEvaluation> {
-  return apiRequest<AccessEvaluation>("/access/request", {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
-}
-
-export function getWalletNonce(
-  wallet: string,
-): Promise<WalletNonce> {
-  return apiRequest<WalletNonce>(
-    `/auth/nonce?wallet=${encodeURIComponent(wallet)}`,
-    { method: "GET" },
-  );
-}
-
-export function getAccessChallenge(
-  requestId: string,
-): Promise<AccessChallenge> {
-  return apiRequest<AccessChallenge>(
-    `/access/${encodeURIComponent(requestId)}/challenge`,
-    { method: "GET" },
-  );
-}
-
-export function verifyAccessChallenge(
-  requestId: string,
-  verification: ChallengeVerification,
-): Promise<Record<string, unknown>> {
-  return apiRequest<Record<string, unknown>>(
-    `/access/${encodeURIComponent(requestId)}/verify`,
-    {
-      method: "POST",
-      body: JSON.stringify(verification),
-    },
-  );
-}
+export const api = <T,>(path: string, init?: RequestInit) => request<T>(`/api/aegis${path}`, init);
+export const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });

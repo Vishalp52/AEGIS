@@ -1,0 +1,16 @@
+{
+  "network": "local Anvil only",
+  "chain_id": 31337,
+  "contract": "0xBb75D4aCA310dBAC14d224bea0E9b68E017dc17C",
+  "deployment_tx": "0xde8009fa123ae1f3095ea5bb07ddff0352db72f432ac00cdb296e936ff46c103",
+  "allow_tx": "0xaa738aedc78d42cb83ed2563614cc9c712e4ec7673ef98a9ee6c93bd48301cc6",
+  "restrict_tx": "0xf7a4b740188b9681681a1ff8ddb26f3ad54189470066af270e630707f22e6da7",
+  "checks": [
+    "deployment",
+    "backend signed write",
+    "confirmed receipt",
+    "ALLOW grants",
+    "RESTRICT denies",
+    "wrong chain rejected"
+  ]
+}

@@ -17,7 +17,7 @@ from app.api.security import (
     recover_signer, verify_access_token, verify_wallet_ownership,
 )
 from app.api.settings import settings
-from app.api.state import AccessAttempt, db_audit, store
+from app.api.state import AccessAttempt, db_audit, store, persist_cases
 from app.chain.demo_replay import WALLET_TO_SCENARIO
 
 router = APIRouter(tags=["access"])
@@ -76,7 +76,7 @@ async def request_access(req: AccessRequest, request: Request):
         verified = verify_wallet_ownership(req.wallet, req.nonce, req.signature)
         if not verified:
             raise _auth_failed(request, req.wallet, req.resource_id, "bad nonce/signature")
-    # Fixed demo wallets have no private keys; they are exempt only while demo mode is on.
+
     ownership_required = settings.require_wallet_signature and not is_demo_wallet
     if ownership_required and not verified:
         raise HTTPException(401, "wallet signature required: GET /auth/nonce, sign the message, resend with nonce + signature")
@@ -122,10 +122,38 @@ def verify_challenge(request_id: str, body: VerifyRequest, request: Request):
     h = db_audit(case["wallet"], "CHALLENGE_VERIFIED", request_id, {"at": int(now)})
     case["audit"].append({"actor": case["wallet"], "event": "CHALLENGE_VERIFIED", "at": _iso(now), "payload_hash": h})
     token = issue_access_token(request_id, case["wallet"], case["resource_id"], case["expires_at_ts"])
+    persist_cases()
     return {**customer_payload(request_id, "RESOLVED"), "access_token": token}
 
 
 # ------------------------------------------------------------------ protected resource
+@router.get("/access/{request_id}/resume", dependencies=[rate_limit("nonce")])
+def resume_challenge(request_id: str):
+    case = _get_case(request_id)
+    if not case.get('resolved') or case.get('revoked') or time.time() >= case['expires_at_ts']:
+        raise HTTPException(409, 'this review does not authorize resuming access')
+    nonce, message, expiry = nonces.issue(case['wallet'], f'resume reviewed access for {request_id}')
+    return {'nonce': nonce, 'message': message, 'expires_at': _iso(expiry)}
+
+
+@router.post("/access/{request_id}/resume", response_model=VerifyResponse, dependencies=[rate_limit("verify")])
+def resume_access(request_id: str, body: VerifyRequest, request: Request):
+    with store.lock:
+        case = _get_case(request_id)
+        if not case.get('resolved') or case.get('revoked') or time.time() >= case['expires_at_ts']:
+            raise HTTPException(409, 'this review does not authorize resuming access')
+        rate_limit_wallet('verify', case['wallet'])
+        message = nonces.consume(body.nonce, case['wallet'], f'resume reviewed access for {request_id}')
+        if not message or recover_signer(message, body.signature) != case['wallet']:
+            raise _auth_failed(request, case['wallet'], case['resource_id'], 'invalid resume signature')
+        case['wallet_verified'] = True
+        digest = db_audit(case['wallet'], 'REVIEWED_ACCESS_RESUMED', request_id, {})
+        case['audit'].append({'actor': case['wallet'], 'event': 'REVIEWED_ACCESS_RESUMED', 'at': _iso(time.time()), 'payload_hash': digest})
+        persist_cases()
+        token = issue_access_token(request_id, case['wallet'], case['resource_id'], case['expires_at_ts'])
+        return {**customer_payload(request_id, 'RESOLVED'), 'access_token': token}
+
+
 @router.get("/vault/{resource_id}", dependencies=[rate_limit("read")])
 def read_vault(resource_id: str, authorization: Optional[str] = Header(None)):
     """The protected resource. Requires a short-lived signed access token (Authorization: Bearer ...)."""
@@ -133,7 +161,7 @@ def read_vault(resource_id: str, authorization: Optional[str] = Header(None)):
     if not claims or claims["res"] != resource_id:
         raise HTTPException(401, "valid access token required", headers={"WWW-Authenticate": "Bearer"})
     case = store.cases.get(claims["rid"])
-    # Defense in depth: re-check live case state (a later RESTRICT / review revokes access)
+
     if not case or case["wallet"] != claims["w"] or _effective_decision(case) not in ("ALLOW", "RESOLVED") \
             or time.time() > case["expires_at_ts"] or case.get("revoked"):
         raise HTTPException(403, "access is no longer authorized")

@@ -44,7 +44,7 @@ def test_legacy_incident_schema_is_migrated_without_data_loss(tmp_path, monkeypa
                                 "VALUES ('legacy', '[1,0,0,0,0,0,0,0]', 'CONFIRMED_INCIDENT')"))
     monkeypatch.setattr(state, "engine", legacy)
     state.init_db()
-    state.init_db()  # migration is idempotent
+    state.init_db()
     assert "source" in {c["name"] for c in inspect(legacy).get_columns("incidents")}
     with legacy.connect() as connection:
         row = connection.execute(text("SELECT incident_id, source FROM incidents")).one()

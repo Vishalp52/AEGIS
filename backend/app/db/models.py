@@ -19,8 +19,8 @@ class IncidentModel(Base):
     incident_id = Column(String, primary_key=True)
     vector = Column(JSON, nullable=False)
     category = Column(String)
-    disposition = Column(String) # CONFIRMED_INCIDENT or SIMULATED_ATTACK
-    source = Column(JSON)  # wallet, source case, simulation label and vector version
+    disposition = Column(String)
+    source = Column(JSON)
     evidence_hash = Column(String)
     confirmed_by = Column(String)
     confirmed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

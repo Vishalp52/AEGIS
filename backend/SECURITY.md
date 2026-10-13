@@ -1,6 +1,6 @@
-# POTUS backend: security model
+# AEGIS backend: security model
 
-POTUS is a security product, so the API protecting the vault has to hold up to
+AEGIS is a security product, so the API protecting the vault has to hold up to
 the same attacks it detects. This file lists the threats we considered, the
 control for each, and the test that proves it (`backend/tests/test_security.py`).
 
@@ -40,8 +40,8 @@ Layered so that a fully compromised model still can't grant access:
 | Variable | Default | Notes |
 |---|---|---|
 | `APP_ENV` | `development` | `production` turns on fail-closed defaults |
-| `POTUS_ADMIN_KEY` | – | ≥ 24 chars; admin role (demo reset) |
-| `POTUS_EMPLOYEE_KEYS` | – | `alice:key1,bob:key2` |
+| `AEGIS_ADMIN_KEY` | – | ≥ 24 chars; admin role (demo reset) |
+| `AEGIS_EMPLOYEE_KEYS` | – | `alice:key1,bob:key2` |
 | `TOKEN_SECRET` | random per process | HMAC key for vault tokens |
 | `REQUIRE_WALLET_SIGNATURE` | `true` in production | Wallet ownership proof on `/access/request` |
 | `ENABLE_DEMO` | `true` in dev, `false` in production | |

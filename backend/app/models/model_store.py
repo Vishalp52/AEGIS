@@ -15,7 +15,7 @@ from app.api.settings import REPO_DIR, settings
 from app.features.schemas import VECTOR_VERSION
 from app.models.isolation_forest import AnomalyDetector, load_training_frame, MODEL_SCHEMA_VERSION
 
-log = logging.getLogger("potus.models")
+log = logging.getLogger("aegis.models")
 
 _detector: Optional[AnomalyDetector] = None
 _detector_path: Optional[Path] = None

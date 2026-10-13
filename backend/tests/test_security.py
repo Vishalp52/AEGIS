@@ -97,7 +97,7 @@ def test_reviewer_identity_comes_from_key(client, anon, scenarios):
     c = client.post("/access/request", json={"wallet": scenarios["C"]["wallet"]}).json()
     spoof = anon.post(f"/cases/{c['request_id']}/review", headers={"X-API-Key": EMPLOYEE_KEY},
                       json={"disposition": "BENIGN", "reviewer": "ceo"})
-    assert spoof.status_code == 422  # unknown field rejected
+    assert spoof.status_code == 422
     ok = anon.post(f"/cases/{c['request_id']}/review", headers={"X-API-Key": EMPLOYEE_KEY}, json={"disposition": "BENIGN"})
     assert ok.json()["review"]["reviewer"] == "alice"
 
@@ -120,14 +120,14 @@ def test_nonce_replay_cross_wallet_and_forged_signature(client, setting):
     sig = sign(victim, n["message"])
     body = {"wallet": victim.address, "nonce": n["nonce"], "signature": sig}
     assert client.post("/access/request", json=body).status_code == 200
-    assert client.post("/access/request", json=body).status_code == 401           # replay
+    assert client.post("/access/request", json=body).status_code == 401
     n2 = client.get("/auth/nonce", params={"wallet": victim.address}).json()
     forged = {"wallet": victim.address, "nonce": n2["nonce"], "signature": sign(attacker, n2["message"])}
-    assert client.post("/access/request", json=forged).status_code == 401          # attacker signs for victim
+    assert client.post("/access/request", json=forged).status_code == 401
     n3 = client.get("/auth/nonce", params={"wallet": attacker.address}).json()
     cross = {"wallet": victim.address, "nonce": n3["nonce"], "signature": sign(attacker, n3["message"])}
-    assert client.post("/access/request", json=cross).status_code == 401           # nonce bound to wallet
-    # failed proofs become security signals
+    assert client.post("/access/request", json=cross).status_code == 401
+
     feats = client.get(f"/wallet/{victim.address}/features").json()
     assert feats["features"]["failed_access_count"] >= 2
 
@@ -143,7 +143,7 @@ def test_expired_nonce_rejected(client, setting):
 
 def test_no_vault_token_without_proof_when_required(client, setting, scenarios):
     setting("require_wallet_signature_env", "true")
-    r = client.post("/access/request", json={"wallet": scenarios["A"]["wallet"]}).json()  # demo wallet: exempt but unproven
+    r = client.post("/access/request", json={"wallet": scenarios["A"]["wallet"]}).json()
     assert r["decision"] == "ALLOW" and r["access_token"] is None
 
 
@@ -158,10 +158,10 @@ def test_token_forgery_and_tampering(client):
     tampered = security._b64(json.dumps(claims, separators=(",", ":"), sort_keys=True).encode()) + "." + sig
     for bad in (tampered, tok + "x", "abc.def", "", "Bearer"):
         assert client.get("/vault/research-vault", headers={"Authorization": f"Bearer {bad}"}).status_code == 401
-    assert client.get("/vault/model-endpoint", headers={"Authorization": f"Bearer {tok}"}).status_code == 401  # other resource
+    assert client.get("/vault/model-endpoint", headers={"Authorization": f"Bearer {tok}"}).status_code == 401
     expired = security.issue_access_token(a["request_id"], acct.address, "research-vault", time.time() - 1)
     assert client.get("/vault/research-vault", headers={"Authorization": f"Bearer {expired}"}).status_code == 401
-    assert "access_token" not in json.dumps(client.get(f"/cases/{a['request_id']}").json())  # never persisted
+    assert "access_token" not in json.dumps(client.get(f"/cases/{a['request_id']}").json())
 
 
 def test_escalation_revokes_earlier_grant(client):
@@ -203,7 +203,7 @@ def test_rate_limit_returns_429(client, setting):
 def test_malformed_input_rejected(client, body):
     r = client.post("/access/request", json=body)
     assert r.status_code == 422
-    assert "<script>" not in r.text and "passwd" not in r.text and INJECTION not in r.text  # no reflection
+    assert "<script>" not in r.text and "passwd" not in r.text and INJECTION not in r.text
 
 
 def test_body_size_limit(client):
@@ -242,7 +242,7 @@ def test_injection_never_reaches_gemini(client, fake_gemini, scenarios):
     packet = g.packets[0]
     blob = json.dumps(packet)
     assert INJECTION not in blob and "</system>" not in blob
-    assert scenarios["C"]["wallet"] not in blob                     # no identity sent to the model
+    assert scenarios["C"]["wallet"] not in blob
     assert set(packet) <= {"resource_id", "anomaly_score", "pattern_similarity", "feature_deltas", "hard_flags",
                            "transfer_value_zscore", "failed_access_count", "wallet_age_blocks",
                            "flagged_counterparty_count", "resource_sensitivity", "history_confidence"}

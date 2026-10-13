@@ -1,7 +1,7 @@
 """Statistical anomaly detector (spec §5): scikit-learn IsolationForest.
 
 Training data = normal behavior only. The detector owns the model contract,
-calibration, population baselines, and deterministic scoring used by the POTUS
+calibration, population baselines, and deterministic scoring used by the AEGIS
 risk engine. It does not make policy decisions.
 """
 from __future__ import annotations
@@ -19,14 +19,14 @@ from app.api.settings import REPO_DIR
 from app.features.baselines import PopulationStats
 from app.features.schemas import MAX_FEATURE_COUNT, MODEL_FEATURES, VECTOR_VERSION
 
-log = logging.getLogger("potus.models")
+log = logging.getLogger("aegis.models")
 
 RANDOM_STATE = 42
 N_ESTIMATORS = 300
 MODEL_NAME = "IsolationForest"
 MODEL_SCHEMA_VERSION = "iforest-v2"
 
-# Column mapping from generate_data.py output -> model feature names.
+
 CSV_MAP = {
     "tx_10m": "tx_count_10m",
     "tx_1h": "tx_count_1h",
@@ -74,7 +74,7 @@ def load_training_frame(csv_path: Optional[Path] = None) -> tuple[pd.DataFrame, 
             else:
                 raise ValueError("missing required feature columns")
 
-            # avg_transfer_value is a level, not a z-score. Convert in log-space.
+
             if "transfer_value_zscore" not in df and "avg_transfer_value" in raw.columns:
                 values = pd.to_numeric(raw["avg_transfer_value"], errors="raise")
                 if not np.isfinite(values).all() or (values < 0).any():
@@ -175,8 +175,8 @@ class AnomalyDetector:
     def _raw(self, X: np.ndarray) -> np.ndarray:
         if self.model is None:
             raise RuntimeError("detector not trained")
-        # sklearn's decision_function is lower for anomalies; flip the sign so
-        # POTUS consistently uses higher = more anomalous.
+
+
         return -self.model.decision_function(X)
 
     def raw_score(self, vector: Sequence[float]) -> float:

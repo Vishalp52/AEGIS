@@ -46,8 +46,8 @@ def test_model_store_loads_trained_model():
 # ---------------------------------------------------------------- features
 def test_extractor_counts_and_deltas():
     now = time.time()
-    txs = [tx(now - 3 * 3600 - i * 1800) for i in range(30)]             # steady history
-    txs += [tx(now - 30 - i * 20, to=f"0x{'d' * 38}{i:02d}") for i in range(12)]  # burst to new contracts
+    txs = [tx(now - 3 * 3600 - i * 1800) for i in range(30)]
+    txs += [tx(now - 30 - i * 20, to=f"0x{'d' * 38}{i:02d}") for i in range(12)]
     txs.append(tx(now - 60, value_mon=80, call=False, to="0x" + "e" * 40))
     act = WalletActivity(wallet=W, source="test", txs=txs, latest_block=10_000, first_seen_block=1, window_seconds=86400)
     b = extract_features(act, "research-vault", AppHistory(access_requests_10m=25, failed_access_count=4), load_detector().population, now=now)

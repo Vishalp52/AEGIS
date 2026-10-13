@@ -16,7 +16,7 @@ def main():
     frame, source = load_training_frame()
     if len(frame) < 10:
         raise SystemExit("At least 10 normal examples are required for holdout evaluation")
-    # This measures normal-data calibration only, never fraud-detection accuracy.
+
     order = np.random.default_rng(42).permutation(len(frame))
     split = max(2, int(.8 * len(frame)))
     train, test = frame.iloc[order[:split]], frame.iloc[order[split:]]

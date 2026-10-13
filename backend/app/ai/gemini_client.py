@@ -10,7 +10,7 @@ from app.ai.schemas import GeminiTriage, provider_schema
 from app.ai.prompt import PROMPT_VERSION, SYSTEM_TRIAGE_PROMPT, build_triage_prompt
 from app.ai.typologies import TypologyMatcher
 
-log = logging.getLogger("potus.gemini")
+log = logging.getLogger("aegis.gemini")
 
 class GeminiTriageClient:
     def __init__(self, *, client=None, timeout_seconds=None):
@@ -36,15 +36,15 @@ class GeminiTriageClient:
                 retry_options=types.HttpRetryOptions(attempts=1)))
 
         if self.client is not None:
-            # google-genai 2.28.0 coerces attempts=0 to 1 before the Interactions
-            # bridge interprets it as retries. Disable retries on that generated
-            # resource explicitly; the pinned-SDK HTTP tests verify one request.
+
+
+
             config = getattr(getattr(self.client.aio, "interactions", None), "sdk_configuration", None)
             if config is not None:
                 config.retry_config.strategy = "none"
 
     def prepare_evidence(self, evidence):
-        # Apply the same privacy boundary even when called outside the HTTP engine.
+
         from app.api.security import sanitize_for_gemini
         packet = sanitize_for_gemini(evidence)
         packet["matched_typologies"] = self.typologies.match(packet)
@@ -97,14 +97,14 @@ class GeminiTriageClient:
             if triage.category == "POTENTIAL_ILLICIT_ACTIVITY" and not any(
                 item["category"] == "POTENTIAL_ILLICIT_ACTIVITY" for item in packet["matched_typologies"]
             ):
-                # Unsupported AI severity must not become a risk signal.
+
                 log.warning("Gemini classification lacked a corroborated configured typology")
                 return None
             return triage
         except TimeoutError:
-            raise  # engine records timeout separately from validation/provider failures
+            raise
         except Exception as exc:
-            # Never log provider bodies, evidence, credentials or generated text.
+
             code = getattr(exc, "code", None)
             log.warning("Gemini triage unavailable (%s; HTTP %s)", type(exc).__name__,
                         code if type(code) is int else "unknown")

@@ -48,7 +48,7 @@ def test_challenge_signature_cannot_authorize_a_new_access_request(client):
     assert response.status_code == 401
     assert len(client.get("/cases").json()["cases"]) == 1
 
-    # Even a failed cross-purpose attempt consumes its nonce.
+
     replay = client.post(f"/access/{request_id}/verify", json={
         "nonce": challenge["nonce"], "signature": _signature(account, challenge["message"]),
     })
@@ -112,6 +112,7 @@ def test_registry_preserves_exact_evidence_digest():
 
 def test_concurrent_registry_writers_use_distinct_pending_nonces(monkeypatch):
     import web3
+    monkeypatch.setenv('MONAD_CHAIN_ID', '143')
 
     nonces = []
     submitted_records = []
@@ -134,8 +135,8 @@ def test_concurrent_registry_writers_use_distinct_pending_nonces(monkeypatch):
         def get_transaction_count(self, address, block):
             assert address == "oracle" and block == "pending"
             nonce = len(nonces)
-            # Model the RPC round trip: without serialization every worker can
-            # read the same pending nonce before any transaction is submitted.
+
+
             time.sleep(0.02)
             return nonce
 

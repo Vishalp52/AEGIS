@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from app.features.schemas import MODEL_FEATURES
 
-# Fallback population baselines (overwritten by the trained model's stats).
+
 DEFAULT_POPULATION = {
     "tx_count_10m": 2.0,
     "tx_count_1h": 8.0,
@@ -17,7 +17,7 @@ DEFAULT_POPULATION = {
     "flagged_counterparty_count": 0.0,
 }
 
-# Minimum baselines so ratios never explode on near-zero denominators.
+
 BASELINE_FLOORS = {
     "tx_count_10m": 1.0,
     "tx_count_1h": 3.0,

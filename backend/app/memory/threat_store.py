@@ -8,7 +8,7 @@ class ThreatStore:
     def insert_incident(self, incident_id: str, vector: list[float], category: str, disposition: str, evidence_hash: str):
         if disposition not in {"CONFIRMED_INCIDENT", "SIMULATED_ATTACK"}:
             return
-        cosine_similarity(vector, vector)  # reject invalid signatures at the storage boundary
+        cosine_similarity(vector, vector)
         if any(inc["incident_id"] == incident_id for inc in self._stored_incidents):
             return
         self._stored_incidents.append({
@@ -23,14 +23,14 @@ class ThreatStore:
         cosine_similarity(target_vector, target_vector)
         if not self._stored_incidents:
             return 0.0, ""
-        
+
         max_sim = 0.0
         matched_id = ""
         for inc in self._stored_incidents:
             try:
                 sim = cosine_similarity(target_vector, inc["vector"])
             except (ValueError, TypeError):
-                continue  # a malformed legacy signature must not hide healthy matches
+                continue
             if sim > max_sim:
                 max_sim = sim
                 matched_id = inc["incident_id"]

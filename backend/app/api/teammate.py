@@ -14,7 +14,7 @@ from types import ModuleType
 
 from app.api.settings import BACKEND_DIR, TEAM_SERVICES_DIR
 
-log = logging.getLogger("potus.teammate")
+log = logging.getLogger("aegis.teammate")
 
 for _p in (str(BACKEND_DIR), str(TEAM_SERVICES_DIR)):
     if _p not in sys.path:
@@ -39,7 +39,7 @@ def _load_policy() -> ModuleType:
         path = BACKEND_DIR / "app" / "risk" / "policy.py"
         spec = importlib.util.spec_from_file_location("app.risk.policy", path)
         mod = importlib.util.module_from_spec(spec)
-        mod.Optional = typing.Optional  # missing import in teammate file
+        mod.Optional = typing.Optional
         sys.modules["app.risk.policy"] = mod
         spec.loader.exec_module(mod)
         log.info("compat: loaded app.risk.policy with Optional pre-seeded")
@@ -61,7 +61,7 @@ from app.db.repository import Repository  # noqa: E402
 
 try:
     from app.ai.gemini_client import GeminiTriageClient  # noqa: E402
-except Exception as exc:  # google-genai missing etc. -> deterministic fallback still works
+except Exception as exc:
     log.warning("Gemini client unavailable (%s); fallback path only", exc)
     GeminiTriageClient = None  # type: ignore[assignment]
 
@@ -69,7 +69,7 @@ from services.audit import AuditService  # noqa: E402
 
 try:
     from services.evaluator import EvaluatorService  # noqa: E402
-except Exception as exc:  # only used for wiring convenience
+except Exception as exc:
     log.warning("EvaluatorService import failed (%s)", exc)
     EvaluatorService = None  # type: ignore[assignment]
 

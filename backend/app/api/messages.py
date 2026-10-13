@@ -53,4 +53,4 @@ def customer_payload(request_id: str, decision: str, policy_customer: dict | Non
 
 
 def challenge_message(request_id: str, wallet: str) -> str:
-    return f"POTUS verification\nRequest: {request_id}\nWallet: {wallet.lower()}\nSign to confirm it's you. This costs no gas."
+    return f"AEGIS verification\nRequest: {request_id}\nWallet: {wallet.lower()}\nSign to confirm it's you. This costs no gas."

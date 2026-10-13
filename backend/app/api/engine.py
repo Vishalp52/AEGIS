@@ -1,4 +1,4 @@
-"""The POTUS evaluation loop (spec §4), wiring:
+"""The AEGIS evaluation loop (spec §4), wiring:
 
     chain data (app/chain) -> features (app/features) -> IsolationForest (app/models)
     -> threat memory / rules / Gemini / fusion / policy (shared modules)
@@ -24,7 +24,7 @@ from app.api import teammate as tm
 from app.api.messages import customer_payload
 from app.api.security import issue_access_token, sanitize_for_gemini
 from app.api.settings import settings
-from app.api.state import AccessAttempt, db_audit, db_save_request, store
+from app.api.state import AccessAttempt, db_audit, db_save_request, store, persist_cases
 from app.chain.demo_replay import scenario_for
 from app.chain.registry import RegistryWriter
 from app.chain.source import get_wallet_activity
@@ -33,10 +33,10 @@ from app.features.extractor import AppHistory, COLD_START_BLOCKS, extract_featur
 from app.features.schemas import MODEL_FEATURES, BehaviorFeatures, FeatureBundle
 from app.models.model_store import load_detector
 
-log = logging.getLogger("potus.engine")
+log = logging.getLogger("aegis.engine")
 
 HIGH_SEVERITY = {"SUSPICIOUS_FRAUD_LIKE", "POTENTIAL_ILLICIT_ACTIVITY"}
-DECISION_TTL_SECONDS = 10 * 60  # validity of non-RESTRICT decisions
+DECISION_TTL_SECONDS = 10 * 60
 
 
 # ------------------------------------------------------------------ config + components
@@ -62,7 +62,7 @@ class Components:
     def __init__(self):
         self.config = load_risk_config()
         if tm.EvaluatorService is not None:
-            ev = tm.EvaluatorService(self.config)       # teammate wiring (rules/fusion/policy/gemini/threat store)
+            ev = tm.EvaluatorService(self.config)
             self.rules, self.fusion, self.policy = ev.rules, ev.fusion, ev.policy
             self.gemini = ev.gemini if tm.GeminiTriageClient is not None else None
         else:
@@ -154,7 +154,7 @@ async def run_triage(evidence: dict, rule_reasons: list[str], anomaly: float, fo
         return mock_triage(evidence, rule_reasons), "mock"
     if c.gemini is None or getattr(c.gemini, "client", None) is None:
         return None, "unavailable"
-    packet = sanitize_for_gemini(evidence)  # allowlisted typed fields only: no identity, no free text
+    packet = sanitize_for_gemini(evidence)
     try:
         triage = await asyncio.wait_for(
             c.gemini.triage(packet),
@@ -170,7 +170,7 @@ async def run_triage(evidence: dict, rule_reasons: list[str], anomaly: float, fo
 
 # ------------------------------------------------------------------ core
 def new_request_id() -> str:
-    # 96 bits of randomness: request IDs are not guessable
+
     return "req_" + datetime.now(timezone.utc).strftime("%y%m%d%H%M%S") + secrets.token_hex(12).upper()
 
 
@@ -184,7 +184,7 @@ def build_bundle(wallet: str, resource_id: str, demo_scenario: Optional[str], no
     activity = activity or get_wallet_activity(wallet, demo_scenario, now=now)
     req_10m, failed_1h = store.app_counts(wallet, now)
     scen = scenario_for(wallet, demo_scenario)
-    if scen:  # labeled simulated preceding attempts for the scenario
+    if scen:
         req_10m += scen.seed_access_requests_10m
         failed_1h += scen.seed_failed_access
     app = AppHistory(access_requests_10m=req_10m + 1, failed_access_count=failed_1h,
@@ -231,7 +231,7 @@ async def score_bundle(bundle: FeatureBundle, force_outage: bool = False) -> dic
 
     try:
         sim, matched = store.threat_store.find_max_similarity(bundle.signature)
-    except Exception as exc:  # e.g. vector-length mismatch with an old incident
+    except Exception as exc:
         log.warning("threat memory lookup failed: %s", exc)
         sim, matched = 0.0, ""
     sim = round(max(0.0, float(sim)), 4)
@@ -248,9 +248,9 @@ async def score_bundle(bundle: FeatureBundle, force_outage: bool = False) -> dic
         gemini_triage=triage, rule_reasons=rule_reasons,
     )
     result = c.policy.evaluate(risk, reasons, forced_review)
-    # Missing chain evidence must not look like a clean, inactive wallet.
-    # Keep stronger deterministic restrictions, but hold otherwise permissive
-    # decisions for review until evidence can be retrieved.
+
+
+
     data_review = bundle.data_source == "none" and result["decision"] in {"ALLOW", "CHALLENGE"}
     if data_review:
         result = c.policy.evaluate(max(risk, c.policy.challenge_max + 1),
@@ -318,7 +318,7 @@ async def evaluate_access(wallet: str, resource_id: str, action: str, demo_scena
     onchain = await asyncio.to_thread(c.registry.publish_minimal_record, wallet, scored["risk_score"], int(expires), evidence_hash, decision)
 
     customer = customer_payload(request_id, decision, scored["policy_customer"])
-    # Vault token only for ALLOW, and only when wallet ownership is proven (or not required)
+
     access_token = None
     if decision == "ALLOW" and (wallet_verified or not ownership_required):
         access_token = issue_access_token(request_id, wallet, resource_id, expires)
@@ -336,14 +336,14 @@ async def evaluate_access(wallet: str, resource_id: str, action: str, demo_scena
         "status": "OPEN" if decision != "ALLOW" else "CLOSED",
         "decision": decision, "resolved": False,
         "scored": scored, "bundle": bundle.model_dump(),
-        "response": {k: v for k, v in response.items() if k != "access_token"},  # never persist bearer tokens
+        "response": {k: v for k, v in response.items() if k != "access_token"},
         "activity": {"source": activity.source, "notes": activity.notes, "simulated": activity.simulated,
                      "txs": [t.__dict__ for t in sorted(activity.txs, key=lambda t: -t.timestamp)[:25]]},
         "scenario": scen.key if scen else None, "reviews": [], "audit": [],
         "wallet_verified": wallet_verified,
     }
     with store.lock:
-        if decision in ("REVIEW", "RESTRICT"):  # escalation revokes this wallet's earlier vault grants
+        if decision in ("REVIEW", "RESTRICT"):
             for other in store.cases.values():
                 if other["wallet"] == wallet:
                     other["revoked"] = True
@@ -353,6 +353,7 @@ async def evaluate_access(wallet: str, resource_id: str, action: str, demo_scena
     db_save_request(request_id, wallet, resource_id, action)
     audit_hash = db_audit(actor, "ACCESS_EVALUATED", request_id, {"decision": decision, "evidence_hash": evidence_hash})
     case["audit"].append({"actor": actor, "event": "ACCESS_EVALUATED", "at": _iso(now), "payload_hash": audit_hash})
+    persist_cases()
     return response
 
 

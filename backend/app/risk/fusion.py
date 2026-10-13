@@ -48,7 +48,7 @@ class RiskFusionEngine:
 
         if gemini_triage is not None:
             from app.ai.schemas import GeminiTriage
-            # Revalidate constructed objects as well as ordinary JSON-derived models.
+
             gemini_triage = GeminiTriage.model_validate(gemini_triage.model_dump())
             g_100 = float(gemini_triage.semantic_risk)
             if gemini_triage.requires_human_review and gemini_triage.category not in {
@@ -76,7 +76,7 @@ class RiskFusionEngine:
                 self.weights["gemini_semantic"] * g_100
             )
         else:
-            # Fallback path: Renormalize remaining weights without Gemini
+
             remaining = self.weights["anomaly"] + self.weights["rules"] + self.weights["threat_similarity"]
             weighted_score = (
                 (self.weights["anomaly"] / remaining) * a_100 +

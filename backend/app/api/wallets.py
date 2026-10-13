@@ -19,8 +19,8 @@ from app.api.state import store
 from app.chain.demo_replay import WALLET_TO_SCENARIO, scenario_for
 from app.chain.source import get_wallet_activity
 
-# Employee-only: exposing features/scores publicly would let an attacker probe the
-# detector and tune behavior to stay under thresholds (model-evasion / oracle attack).
+
+
 router = APIRouter(tags=["wallets"], dependencies=[Depends(require_employee), rate_limit("score")])
 
 ZERO = "0x0000000000000000000000000000000000000000"

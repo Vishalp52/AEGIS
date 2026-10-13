@@ -17,17 +17,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', default='backend/evaluation/live-api-smoke.json')
     args = parser.parse_args()
-    # Read only the explicit project environment; process environment wins.
+
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / '.env')
     if not (os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')):
         raise SystemExit('Set GEMINI_API_KEY before running the live API smoke test.')
-    with tempfile.TemporaryDirectory(prefix='potus-live-smoke-') as temp:
+    with tempfile.TemporaryDirectory(prefix='aegis-live-smoke-') as temp:
         admin = secrets.token_urlsafe(32)
         os.environ.update(GEMINI_MODE='auto', DATA_SOURCE='none', APP_ENV='development',
-            ENABLE_DEMO='true', REQUIRE_WALLET_SIGNATURE='false', POTUS_REGISTRY_ADDRESS='',
+            ENABLE_DEMO='true', REQUIRE_WALLET_SIGNATURE='false', AEGIS_REGISTRY_ADDRESS='',
             ORACLE_PRIVATE_KEY='', DATABASE_URL='sqlite:///' + str(Path(temp) / 'smoke.db'),
-            POTUS_ADMIN_KEY=admin, TOKEN_SECRET=secrets.token_urlsafe(32))
+            AEGIS_ADMIN_KEY=admin, TOKEN_SECRET=secrets.token_urlsafe(32))
         from fastapi.testclient import TestClient
         from main import app
         from app.api.engine import components

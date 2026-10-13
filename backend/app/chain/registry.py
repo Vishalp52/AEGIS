@@ -1,24 +1,25 @@
-"""PotusRegistry writer (spec §9): publish the MINIMAL on-chain record
+"""AegisRegistry writer (spec §9): publish the MINIMAL on-chain record
 (score, expiry, decision, evidence hash). Full evidence stays off-chain.
 
-Skipped (status "skipped") unless POTUS_REGISTRY_ADDRESS and ORACLE_PRIVATE_KEY are set.
+Skipped (status "skipped") unless AEGIS_REGISTRY_ADDRESS and ORACLE_PRIVATE_KEY are set.
 Decision encoding (must match the contract owner's enum):
     0 = ALLOW, 1 = CHALLENGE, 2 = REVIEW, 3 = RESTRICT
 """
 from __future__ import annotations
 
 import logging
+import os
 import re
 import threading
 from typing import Any
 
 from app.api.settings import settings
 
-log = logging.getLogger("potus.chain.registry")
+log = logging.getLogger("aegis.chain.registry")
 
 DECISION_CODES = {"ALLOW": 0, "CHALLENGE": 1, "REVIEW": 2, "RESTRICT": 3}
-# All evaluations share the configured oracle account. Protect its pending nonce
-# until submission succeeds, including when more than one writer is instantiated.
+
+
 _SUBMISSION_LOCK = threading.Lock()
 
 REGISTRY_ABI = [
@@ -45,7 +46,7 @@ def to_bytes32(hex_hash: str) -> bytes:
 
 class RegistryWriter:
     def __init__(self):
-        self.address = settings.potus_registry_address
+        self.address = settings.aegis_registry_address
         self.key = settings.oracle_private_key
 
     @property
@@ -54,26 +55,47 @@ class RegistryWriter:
 
     def publish_minimal_record(self, wallet: str, score: int, expires_at: int, evidence_hash: str, decision: str) -> dict[str, Any]:
         if not self.enabled:
-            return {"status": "skipped", "reason": "POTUS_REGISTRY_ADDRESS / ORACLE_PRIVATE_KEY not configured"}
+            return {"status": "skipped", "reason": "AEGIS_REGISTRY_ADDRESS / ORACLE_PRIVATE_KEY not configured"}
         try:
             digest = to_bytes32(evidence_hash)
             from web3 import Web3
             w3 = Web3(Web3.HTTPProvider(settings.monad_rpc_url, request_kwargs={"timeout": settings.chain_timeout_seconds}))
             acct = w3.eth.account.from_key(self.key)
+            chain_id = int(w3.eth.chain_id)
+            if chain_id != int(os.getenv('MONAD_CHAIN_ID', '10143')):
+                raise ValueError('configured chain ID does not match RPC')
             c = w3.eth.contract(address=Web3.to_checksum_address(self.address), abi=REGISTRY_ABI)
-            fn = c.functions.updateRisk(Web3.to_checksum_address(wallet), max(0, min(255, int(score))),
+            if not 0 <= int(score) <= 100:
+                raise ValueError('risk score outside contract range')
+            fn = c.functions.updateRisk(Web3.to_checksum_address(wallet), int(score),
                                         int(expires_at), digest, DECISION_CODES[decision])
             with _SUBMISSION_LOCK:
                 tx = fn.build_transaction({
                     "from": acct.address,
                     "nonce": w3.eth.get_transaction_count(acct.address, "pending"),
-                    "chainId": w3.eth.chain_id,
+                    "chainId": chain_id,
                 })
                 signed = acct.sign_transaction(tx)
                 raw = getattr(signed, "raw_transaction", None) or getattr(signed, "rawTransaction")
                 tx_hash = w3.eth.send_raw_transaction(raw)
             h = tx_hash.hex() if hasattr(tx_hash, "hex") else str(tx_hash)
-            return {"status": "submitted", "tx_hash": h if h.startswith("0x") else "0x" + h}
+            tx_hash = h if h.startswith('0x') else '0x' + h
+            explorer = 'https://testnet.monadscan.com' if chain_id == 10143 else 'https://monadscan.com'
+            return {"status": "submitted", "tx_hash": tx_hash, 'chain_id': chain_id,
+                    'explorer_url': f'{explorer}/tx/{tx_hash}' if chain_id in (143, 10143) else None}
         except Exception as exc:
-            log.warning("registry write failed: %s", exc)
-            return {"status": "failed", "error": str(exc)[:300]}
+            log.warning("registry write failed (%s)", type(exc).__name__)
+            return {"status": "failed", "error": "Registry submission failed; check network, oracle funding and contract configuration."}
+
+    def receipt(self, tx_hash: str) -> dict[str, Any]:
+        from web3 import Web3
+        from web3.exceptions import TransactionNotFound
+        if not re.fullmatch(r'0x[0-9a-fA-F]{64}', tx_hash):
+            raise ValueError('invalid transaction hash')
+        w3 = Web3(Web3.HTTPProvider(settings.monad_rpc_url, request_kwargs={'timeout': settings.chain_timeout_seconds}))
+        try:
+            receipt = w3.eth.get_transaction_receipt(tx_hash)
+        except TransactionNotFound:
+            return {'status': 'submitted', 'tx_hash': tx_hash}
+        return {'status': 'confirmed' if receipt['status'] == 1 else 'reverted', 'tx_hash': tx_hash,
+                'block_number': receipt['blockNumber'], 'gas_used': receipt['gasUsed']}

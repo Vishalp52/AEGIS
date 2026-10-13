@@ -14,7 +14,7 @@ OUTPUT_FILE = Path(__file__).resolve().parent.parent / "normal_wallets.csv"
 def generate_normal_wallets(count: int = NUM_WALLETS, seed: int = 42) -> pd.DataFrame:
     if count < 2:
         raise ValueError("At least two normal-wallet samples are required")
-    # A local generator preserves the existing fixture without changing callers' RNG state.
+
     rng = np.random.RandomState(seed)
     return pd.DataFrame({
         "tx_10m": rng.poisson(2, count),

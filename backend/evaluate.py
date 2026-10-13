@@ -52,7 +52,7 @@ async def evaluate(args):
             triage, status = None, "offline_no_api"
             if ai:
                 try:
-                    # Deliberately tests every selected packet, including below-trigger cases.
+
                     triage = await ai.triage(evidence)
                     status = "ok" if triage else "fallback"
                 except TimeoutError:
@@ -103,7 +103,7 @@ def main():
     path.write_text(json.dumps(report, indent=2) + "\n")
     print(f"{report['packet_count']} packets; {report['accepted_triage_count']} accepted Gemini results; report: {path}")
     if args.live and report["accepted_triage_count"] != report["packet_count"]:
-        raise SystemExit(1)  # Partial availability must not appear to pass the full live check.
+        raise SystemExit(1)
 
 if __name__ == "__main__":
     main()

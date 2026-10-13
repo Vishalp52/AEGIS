@@ -17,13 +17,16 @@ from typing import Any, Optional
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
+from app.db.snapshots import CaseSnapshot, FeatureSnapshot, RiskEvaluation, TriageRecord, EmployeeReview, AttemptRecord
 
 from app.api import teammate as tm
 from app.api.settings import BACKEND_DIR, settings
 from app.chain.demo_replay import FLAGGED_COUNTERPARTIES
 from app.features.schemas import MODEL_FEATURES, VECTOR_VERSION
 
-log = logging.getLogger("potus.state")
+log = logging.getLogger("aegis.state")
 
 FAILED_DECISIONS = {"CHALLENGE", "REVIEW", "RESTRICT", "AUTH_FAILED"}
 
@@ -51,6 +54,9 @@ class Store:
         with self.lock:
             a.wallet = a.wallet.lower()
             self.attempts[a.wallet].append(a)
+            with SessionLocal() as session:
+                session.add(AttemptRecord(**a.__dict__))
+                session.commit()
 
     def app_counts(self, wallet: str, now: Optional[float] = None) -> tuple[int, int]:
         """(access requests in last 10m, failed/held attempts in last 1h) BEFORE the current request."""
@@ -91,18 +97,70 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 def init_db() -> None:
     tm.Base.metadata.create_all(engine)
-    # Additive migration for databases created before incident provenance was saved.
-    # Existing records remain intact and have unknown source metadata.
+
+
     if "source" not in {c["name"] for c in inspect(engine).get_columns("incidents")}:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE incidents ADD COLUMN source JSON"))
+
+
+def persist_cases() -> None:
+    try:
+        with store.lock, SessionLocal() as session:
+            for case in store.cases.values():
+                rid, bundle, scored = case['request_id'], case['bundle'], case['scored']
+                payload = jsonable_encoder(case)
+                payload['response'].pop('access_token', None)
+                session.merge(CaseSnapshot(request_id=rid, payload=payload, updated_at=datetime.now(timezone.utc)))
+                session.merge(FeatureSnapshot(request_id=rid, feature_json=bundle['features'],
+                    baseline_json=bundle['baselines'], vector_version=VECTOR_VERSION))
+                session.merge(RiskEvaluation(request_id=rid, component_scores=scored['breakdown'],
+                    risk_score=case['response']['risk_score'], decision=case['decision'],
+                    reason_codes=scored['reason_codes'], expiry=case['expires_at_ts']))
+                session.merge(TriageRecord(request_id=rid, payload=payload['scored']['triage'],
+                    prompt_version=scored.get('prompt_version'), status=scored['gemini_status']))
+                for index, review in enumerate(case['reviews']):
+                    session.merge(EmployeeReview(review_id=f'{rid}:{index}', case_id=rid, payload=review))
+            session.commit()
+    except Exception as exc:
+        log.error('case persistence failed (%s)', type(exc).__name__)
+        raise HTTPException(503, 'evaluation could not be saved; please retry') from exc
+
+
+def load_cases_into_memory() -> int:
+    from app.ai.schemas import GeminiTriage
+    with store.lock, SessionLocal() as session:
+        store.cases.clear()
+        store.attempts.clear()
+        simulated_ids = set()
+        for row in session.query(CaseSnapshot).all():
+            case = row.payload
+            if case.get('activity', {}).get('simulated') and not settings.demo_enabled:
+                simulated_ids.add(row.request_id)
+                continue
+            triage = case['scored'].get('triage')
+            if triage is not None:
+                case['scored']['triage'] = GeminiTriage.model_validate(triage)
+            store.cases[row.request_id] = case
+        for row in session.query(AttemptRecord).filter(AttemptRecord.ts >= time.time() - 86400).all():
+            if row.request_id in simulated_ids:
+                continue
+            store.attempts[row.wallet].append(AccessAttempt(row.request_id, row.wallet, row.resource_id, row.ts, row.decision))
+    return len(store.cases)
+
+
+def db_clear_cases() -> None:
+    with SessionLocal() as session:
+        for model in (CaseSnapshot, FeatureSnapshot, RiskEvaluation, TriageRecord, EmployeeReview, AttemptRecord):
+            session.query(model).delete()
+        session.commit()
 
 
 def _safe(fn, *args, **kwargs):
     try:
         with SessionLocal() as s:
             return fn(tm.Repository(s), s, *args, **kwargs)
-    except Exception as exc:  # persistence must never break the security loop
+    except Exception as exc:
         log.warning("db write failed: %s", exc)
         return None
 

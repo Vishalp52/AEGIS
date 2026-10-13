@@ -1,6 +1,6 @@
 """Behavioral feature extraction (spec §5).
 
-Turns normalized chain activity (RPC / Envio / demo replay) plus POTUS
+Turns normalized chain activity (RPC / Envio / demo replay) plus AEGIS
 application history into a normalized feature vector, human-readable deltas,
 and hard flags.
 """
@@ -30,9 +30,9 @@ WEI_PER_MON = 10 ** 18
 
 @dataclass
 class AppHistory:
-    """POTUS application-side signals for one wallet."""
+    """AEGIS application-side signals for one wallet."""
     access_requests_10m: int = 0
-    failed_access_count: int = 0          # denied/challenged/held attempts in the last hour
+    failed_access_count: int = 0
     flagged_counterparties: set[str] = field(default_factory=set)
 
 
@@ -48,7 +48,7 @@ def _value_zscore(recent: list[ChainTx], prior: list[ChainTx]) -> tuple[float, O
     if len(prior_vals) < 3:
         return 0.0, "transfer_value_zscore: not enough prior transfers for a baseline"
     mu = statistics.fmean(prior_vals)
-    sd = max(statistics.pstdev(prior_vals), 0.25)   # floor avoids blow-ups on identical values
+    sd = max(statistics.pstdev(prior_vals), 0.25)
     z = (max(recent_vals) - mu) / sd
     return round(max(-ZSCORE_CAP, min(ZSCORE_CAP, z)), 3), None
 
@@ -91,8 +91,8 @@ def extract_features(
     wallet = activity.wallet.lower()
     notes = list(activity.notes)
 
-    # Keep all signals on the same observed 24h window. Future timestamps must
-    # not inflate counts or introduce counterparties into an earlier snapshot.
+
+
     all_txs = sorted((t for t in activity.txs if 0 <= now - t.timestamp <= ONE_DAY),
                      key=lambda t: t.timestamp)
     out_txs = [t for t in all_txs if t.from_addr == wallet]
