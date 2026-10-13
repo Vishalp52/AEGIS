@@ -1,12 +1,22 @@
 # AEGIS
 
-Behavior-based authorization for a private research API on Monad. AEGIS combines wallet ownership, recent activity, an Isolation Forest, deterministic rules, reviewed threat memory, and bounded Gemini interpretation. The application grants access, asks for a signature, routes a case for review, or restricts access. It does not identify criminal intent or make public blockchain data private.
+We are building AEGIS to add behavioral security to wallet-based access. A signature proves control of a wallet. We also look at activity and access patterns before deciding whether a request should reach a protected resource.
 
-This delivery extends the supplied project through the customer UI, employee console, persistent investigations, policy recovery, and Solidity registry. It includes source, a trained model, tests, deployment files, and a [Monad submission and usage guide](docs/MONAD_GUIDE.md). The separate Word version is in `docs/AEGIS_Monad_Submission_and_User_Guide.docx`.
+**Try it:** https://aegis-web-8nd8.onrender.com/
 
-**Live product:** https://aegis-web-8nd8.onrender.com/ · **Repository:** https://github.com/Vishalp52/AEGIS
+**Employee console:** https://aegis-web-8nd8.onrender.com/employee
 
-**Delivery status (October 13, 2026):** frontend and private backend are deployed on Render. Envio and Alchemy are configured and passed a combined local check against live Monad Testnet data. Dynamic's Sandbox login is deployed with Monad Testnet enabled; a complete user-controlled wallet-signing session remains to be verified. The latest backend suite passed 237 tests. Hosted Gemini is mocked. The Solidity registry is implemented and locally tested, but no public Monad contract deployment is claimed. `docs/local-chain-validation.json` contains local Anvil transactions only. See [sponsor integrations](docs/SPONSOR_INTEGRATIONS.md) and [submission copy](docs/SUBMISSION_COPY.md). Demo and pitch videos and final portal submission remain team steps.
+AEGIS brings together Dynamic wallet connection, Envio activity data, Alchemy verification, an Isolation Forest and deterministic rules. It can allow access, ask for another signature, send a case to an employee or restrict access. The employee console shows the evidence and provides a review and recovery process.
+
+We want to develop this into an enterprise product that teams can use across private APIs and wallet-enabled applications. This release is our hackathon proof of concept. The website and backend are deployed, and Envio and Alchemy passed a combined live Monad Testnet check. Dynamic login is working; the complete user-controlled signing walkthrough is still pending. The model was trained on synthetic data, hosted Gemini is mocked, and the registry is tested locally but has no public deployment yet.
+
+## Access for judges
+
+The customer demo is public. For the employee console, use the judge key in the submission portal's **private Judge access instructions** field. Paste only the key into the sign-in form; there is no separate username. The judge login can view cases and make review decisions, but cannot run admin-only resets. Please use simulated cases when testing reviews.
+
+For your own deployment, get `AEGIS_ADMIN_KEY` from the backend's private environment settings, or configure a separate `AEGIS_EMPLOYEE_KEYS` entry such as `judges:<a-random-private-key>`. The placeholder is not a working login. Keep real keys out of the repository and recording.
+
+See the [user guide](docs/MONAD_GUIDE.md), [sponsor integrations](docs/SPONSOR_INTEGRATIONS.md) and [submission text](docs/SUBMISSION_COPY.md).
 
 ## Quick start in VS Code
 
@@ -31,7 +41,7 @@ npm run dev
 
 Open <http://localhost:3000>. Use the same hostname consistently; the frontend checks request origins. API documentation is at <http://localhost:8000/docs> in development.
 
-The setup script creates private `backend/.env` and `frontend/.env.local` files with fresh random secrets. Existing files are preserved. The configured private delivery already contains these files. For employee sign-in, open `backend/.env` locally and copy the value of `AEGIS_ADMIN_KEY`, or the key after `local:` in `AEGIS_EMPLOYEE_KEYS`. Do not paste keys into the README or commit them.
+The setup script creates private `backend/.env` and `frontend/.env.local` files with fresh random secrets. Existing files are preserved. For employee sign-in, open `backend/.env` locally and copy the value of `AEGIS_ADMIN_KEY`, or the key after `local:` in `AEGIS_EMPLOYEE_KEYS`. Do not paste keys into the README or commit them.
 
 Demo mode needs neither a paid AI request nor a funded wallet. To verify a signature challenge, connect an injected Ethereum-compatible wallet before selecting a scenario. The app switches it to Monad Testnet. The demo uses simulated activity for the connected address.
 
@@ -46,8 +56,6 @@ Demo mode needs neither a paid AI request nor a funded wallet. To verify a signa
 7. For an identity recovery demonstration, use a separate unconfirmed C case created with your connected wallet. Save **CUSTOMER_VERIFIED** in the console. On the original customer tab, refresh review status, sign to restore access, and open the vault. A case already revoked by a confirmed incident cannot be reopened through this action.
 
 **BENIGN** closes a review; it does not independently issue a grant. **CUSTOMER_VERIFIED** is the explicit identity recovery action. Customer access tokens stay in browser memory and disappear on refresh or wallet change. Cases remain in SQLite; start a new access request after reloading the customer page. Admin demo reset clears cases, attempts, reviews, incidents, nonces, and rate-limit state. It does not undo blockchain transactions. Keep demo and live databases separate.
-
-**Risk policy (spec §7):** the fused score is computed on exact decimals and x.5 rounds up into the stricter band. Uncertain Gemini output (high-severity label below 0.70 confidence, or an explicit review request) routes to REVIEW, but never lowers a RESTRICT that anomaly, rules and threat memory reach on their own. A RESTRICT stays in force for `restrict_ttl_minutes` even if the wallet's next request scores lower; analyst resolution or expiry lifts it. Thresholds, the TTL (1-1440 minutes) and `low_confidence_high_severity_action` (must be REVIEW) are validated at startup. Regression tests: `backend/tests/test_section7_policy.py`.
 
 ## Architecture and scope
 
@@ -203,9 +211,9 @@ cd ../contracts
 forge test
 ```
 
-Verification on October 12, 2026: 228 backend tests passed, 12 contract tests passed (including 256 fuzz runs), frontend lint and production build passed. Browser workflows and local chain integration are recorded in [VALIDATION.md](VALIDATION.md).
+Our latest backend run on October 13 passed 292 tests, including the section 7 fixes. All 18 frontend tests, lint and the production build passed. Earlier checks passed 12 contract tests (including 256 fuzz runs), frontend tests, lint and a production build. Browser workflows and local chain integration are recorded in [VALIDATION.md](VALIDATION.md).
 
-For containers, run `python scripts/setup.py --mode demo`, then `docker compose up --build` from the root. The compose file binds to localhost, stores SQLite in a named volume, and runs one backend process. Docker files are supplied but were not built in the delivery environment. For hosting, use HTTPS, set the frontend's exact `APP_ORIGIN`, set `COOKIE_SECURE=true`, configure private environment variables, expose only the frontend publicly where possible, and attach durable backend storage. Do not use an ephemeral filesystem for the database. Follow the [Monad guide](docs/MONAD_GUIDE.md) for funded testnet deployment and submission.
+For containers, run `python scripts/setup.py --mode demo`, then `docker compose up --build` from the root. The compose file binds to localhost, stores SQLite in a named volume, and runs one backend process. The Docker services build and run on Render; Docker was not available for a local container check. For hosting, use HTTPS, set the frontend's exact `APP_ORIGIN`, set `COOKIE_SECURE=true`, configure private environment variables, expose only the frontend publicly where possible, and attach durable backend storage. Do not use an ephemeral filesystem for the database. Follow the [Monad guide](docs/MONAD_GUIDE.md) for funded testnet deployment and submission.
 
 ## GitHub from VS Code
 
@@ -237,7 +245,7 @@ If the remote already has commits, clone it first and copy the completed source 
 
 ## Latest wallet and API audit
 
-See [the October 13 wallet and API check](docs/API_WALLET_CHECK.md) for the fixes, 231 backend tests, 11 frontend tests and signed-wallet browser results. Run `npm test` from frontend to execute the wallet and proxy regression tests. Wallet extensions must be installed in the browser opening the site; embedded app browsers may not expose them.
+See [the October 13 wallet and API check](docs/API_WALLET_CHECK.md) for earlier wallet and API fixes and signed test-wallet browser results. The newer sponsor work brings the backend suite to 292 tests. Run `npm test` from frontend to execute the wallet and proxy regression tests. Wallet extensions must be installed in the browser opening the site; embedded app browsers may not expose them.
 
 The replacement Gemini credential can list models, but real generation returned provider HTTP 503 during this check. The API's deterministic fallback passed. GitHub Actions has a manual **Live Gemini API check** workflow using the encrypted `GEMINI_API_KEY` repository secret so generation can be rechecked without committing credentials. This secret must also be configured separately in a hosting platform's private backend environment.
 
@@ -247,8 +255,12 @@ The AEGIS identity uses an original geometric A, a custom vector wordmark, near-
 
 ## Public hosting
 
-Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Account setup and approval of the paid services are required before publication. The initial hosted demo uses labeled mock AI and requires wallet signatures; configure and verify Gemini and the Monad registry separately.
+Use the root `render.yaml` to create a public website, private backend and persistent case disk on Render. See [hosting instructions](docs/HOSTING.md). Our public website and private backend are already deployed with persistent case storage. The initial hosted demo uses labeled mock AI and requires wallet signatures; configure and verify Gemini and the Monad registry separately.
 
 ## Sponsor integrations
 
-Envio indexed wallet history, Alchemy RPC corroboration and Dynamic wallet signing are documented in [the sponsor setup and verification guide](docs/SPONSOR_INTEGRATIONS.md). The implementations require account configuration and live verification before any bounty eligibility claim. The live website is https://aegis-web-8nd8.onrender.com.
+Envio indexed wallet history, Alchemy RPC corroboration and Dynamic wallet signing are documented in [the sponsor setup and verification guide](docs/SPONSOR_INTEGRATIONS.md). All three integrations are configured. The combined Envio/Alchemy live check passed; the complete Dynamic signing walkthrough remains pending. The live website is https://aegis-web-8nd8.onrender.com.
+
+## Section 7 updates
+
+We merged `monish/section7-on-main`: score boundaries now use consistent half-up rounding, invalid risk settings fail early, uncertain AI cannot override a restriction supported by deterministic evidence, and an active restriction lasts until expiry or analyst resolution. Decision records include more explanation, and employee sign-in refuses a backend with no configured keys.

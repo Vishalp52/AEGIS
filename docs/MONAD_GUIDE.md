@@ -1,6 +1,6 @@
 # AEGIS Monad submission and user guide
 
-This guide takes the project owner from the supplied source to a working local demonstration, a funded Monad Testnet registry, and a reviewable hackathon submission. The application is implemented and locally verified. Hosting, wallet funding, public-chain deployment and final submission must be completed with the owner's accounts.
+This guide covers running AEGIS, reviewing cases and preparing a submission. Our website and backend are hosted on Render. Envio, Alchemy and Dynamic are configured for Monad Testnet. A public registry deployment and the complete Dynamic signing walkthrough remain unfinished. The README has the latest status.
 
 ## 1 Prepare the project
 

@@ -1,6 +1,6 @@
 # Publish AEGIS on Render
 
-The root render.yaml configures a public Next.js web service, a private Python API, and a 1 GB persistent disk for case storage. Both services use the Starter plan and one instance. Review Render's displayed charges before approving deployment; persistent disks require paid hosting. This configuration has not yet been deployed or container-tested locally because Docker is unavailable here.
+The root render.yaml configures a public Next.js web service, a private Python API, and a 1 GB persistent disk for case storage. Both services use the Starter plan and one instance. Review Render's displayed charges before approving deployment; persistent disks require paid hosting. We have deployed this configuration on Render. The public site is https://aegis-web-8nd8.onrender.com/. Docker was unavailable for a separate local container check.
 
 1. Open https://dashboard.render.com/select-repo?type=blueprint and create a Render account using GitHub.
 2. Connect https://github.com/Vishalp52/AEGIS and select its main branch. Use render.yaml from the repository root.
