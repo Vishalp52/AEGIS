@@ -71,4 +71,4 @@ Open https://aegis-web-8nd8.onrender.com/. Simulated replay offers labeled examp
 
 For the live flow, choose Live wallet, click Log in or sign up, connect through Dynamic and select Monad Testnet (10143). Request vault access and approve only the displayed authentication message. No payment or token approval is required for the access-signature flow. Complete any additional signature challenge requested by the policy. An ALLOW decision can open the protected research vault; sparse or unusual history may lead to a challenge or review instead.
 
-The employee console requires a private operator key and is not a public login. The Placeholder Key is - HtudSOASSF6wXGYIt5eberBMImLrUnP6rC5LNgOMQ9A. 
+The employee console requires a private operator key and is not a public login. Do not use repository placeholders as credentials. Source, setup and provider-check instructions are in README.md and docs/SPONSOR_INTEGRATIONS.md. Dynamic is configured in Sandbox. Gemini is mocked on the hosted demonstration, and the optional registry is not publicly deployed. The recorded demo will be added by the team.
