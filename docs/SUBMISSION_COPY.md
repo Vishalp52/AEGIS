@@ -36,7 +36,7 @@ We built a customer interface and an employee console around that process. Custo
 
 Our goal is to make AEGIS something companies can integrate into their existing applications and use across protected APIs, customer portals and sensitive workflows. We want it to be widely implemented because it gives developers an access-control flow and gives security teams a practical way to investigate unusual activity. We plan to start with focused pilots and expand after we can show useful results.
 
-The current version is a hosted proof of concept on Monad Testnet. Envio and Alchemy passed a combined live data check, and Dynamic's login is deployed. The full wallet-signing walkthrough is still pending. Our anomaly model uses synthetic training data, hosted Gemini generation has passed a live check, and the Solidity registry is implemented and tested locally but not publicly deployed. Security review and broader testing are part of the work needed before enterprise rollout.
+The current version is a hosted proof of concept on Monad Testnet. Envio and Alchemy passed a combined live data check, and Dynamic wallet signing and protected vault access passed a live Safari/MetaMask walkthrough. Our anomaly model uses synthetic training data, hosted Gemini generation has passed a live check, and the Solidity registry is implemented and tested locally but not publicly deployed. Security review and broader testing are part of the work needed before enterprise rollout.
 
 ## Gtm
 

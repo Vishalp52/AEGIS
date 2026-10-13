@@ -8,7 +8,7 @@ We are building AEGIS to add behavioral security to wallet-based access. A signa
 
 AEGIS brings together Dynamic wallet connection, Envio activity data, Alchemy verification, an Isolation Forest and deterministic rules. It can allow access, ask for another signature, send a case to an employee or restrict access. The employee console shows the evidence and provides a review and recovery process.
 
-We want to develop this into an enterprise product that teams can use across private APIs and wallet-enabled applications. This release is our hackathon proof of concept. The website and backend are deployed, and Envio and Alchemy passed a combined live Monad Testnet check. Dynamic login is working; the complete user-controlled signing walkthrough is still pending. The model was trained on synthetic data, hosted Gemini generation has passed a live check, and the registry is tested locally but has no public deployment yet.
+We want to develop this into an enterprise product that teams can use across private APIs and wallet-enabled applications. This release is our hackathon proof of concept. The website and backend are deployed, and Envio and Alchemy passed a combined live Monad Testnet check. Dynamic wallet authentication was verified in Safari: MetaMask signed the live request, AEGIS returned ALLOW, and the protected vault opened. The model was trained on synthetic data, hosted Gemini generation has passed a live check, and the registry is tested locally but has no public deployment yet.
 
 ## Access for judges
 
@@ -259,7 +259,7 @@ Use the root `render.yaml` to create a public website, private backend and persi
 
 ## Sponsor integrations
 
-Envio indexed wallet history, Alchemy RPC corroboration and Dynamic wallet signing are documented in [the sponsor setup and verification guide](docs/SPONSOR_INTEGRATIONS.md). All three integrations are configured. The combined Envio/Alchemy live check passed; the complete Dynamic signing walkthrough remains pending. The live website is https://aegis-web-8nd8.onrender.com.
+Envio indexed wallet history, Alchemy RPC corroboration and Dynamic wallet signing are documented in [the sponsor setup and verification guide](docs/SPONSOR_INTEGRATIONS.md). All three integrations are configured. The combined Envio/Alchemy live check passed; Dynamic signing and protected vault access passed a live Safari/MetaMask walkthrough. The live website is https://aegis-web-8nd8.onrender.com.
 
 ## Section 7 updates
 
